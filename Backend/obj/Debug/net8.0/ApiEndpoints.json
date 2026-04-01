@@ -1,0 +1,12 @@
+[
+  {
+    "ContainingType": "Backend.Controllers.ResetDBController",
+    "Method": "ResetDatabase",
+    "RelativePath": "api/resetdb",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]
