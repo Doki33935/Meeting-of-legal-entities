@@ -16,6 +16,18 @@
           }
         }
       }
+    },
+    "/api/start": {
+      "get": {
+        "tags": [
+          "Start"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
     }
   },
   "components": { }

@@ -42,11 +42,12 @@ builder.Services.AddScoped<StartService>();
 var app = builder.Build();
 
 
-// 7 Включаем CORS, Роуты, Проверка прав пользователя на этот роут и Контроллеры
+// 7 Включаем CORS, Роуты, Проверка прав пользователя на этот роут и Контроллеры и Картинки
 app.UseCors("AllowReactDev");
 app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();
+app.UseStaticFiles();
 
 // 8 Swagger (только в Development (Debug режим сверху))
 if (app.Environment.IsDevelopment())
