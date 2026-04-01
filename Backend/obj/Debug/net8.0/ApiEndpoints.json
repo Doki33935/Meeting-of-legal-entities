@@ -8,5 +8,15 @@
     "Order": 0,
     "Parameters": [],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.StartController",
+    "Method": "GetAvailableSlots",
+    "RelativePath": "api/start",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
   }
 ]

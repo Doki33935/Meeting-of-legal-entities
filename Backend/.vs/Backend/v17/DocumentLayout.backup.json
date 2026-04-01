@@ -3,60 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\models\\staff.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:models\\staff.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\controllers\\startcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:controllers\\startcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\controllers\\resetdbcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:controllers\\resetdbcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\db\\applicationdb.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:db\\applicationdb.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\models\\timetable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:models\\timetable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\schemas\\meetrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:schemas\\meetrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\services\\timeservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:services\\timeservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\schemas\\timerequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:schemas\\timerequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\controllers\\timecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:controllers\\timecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\schemas\\startrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:schemas\\startrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\services\\startservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:services\\startservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\services\\meetservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:services\\meetservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\controllers\\meetcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:controllers\\meetcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|c:\\users\\tim\\desktop\\prod\\meeting-of-legal-entities\\backend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{83690581-6E09-424D-A9D8-8607CAFF1B80}|Backend.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -71,170 +23,25 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "Staff.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Models\\Staff.cs",
-              "RelativeDocumentMoniker": "Models\\Staff.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Models\\Staff.cs",
-              "RelativeToolTip": "Models\\Staff.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T18:39:27.755Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
               "Title": "ResetDBController.cs",
               "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Controllers\\ResetDBController.cs",
               "RelativeDocumentMoniker": "Controllers\\ResetDBController.cs",
               "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Controllers\\ResetDBController.cs",
               "RelativeToolTip": "Controllers\\ResetDBController.cs",
-              "ViewState": "AgIAABgAAAAAAAAAAAAYwAwAAAAyAAAAAAAAAA==",
+              "ViewState": "AgIAABIAAAAAAAAAAAAAwCAAAAA0AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T18:24:03.467Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "TimeService.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Services\\TimeService.cs",
-              "RelativeDocumentMoniker": "Services\\TimeService.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Services\\TimeService.cs",
-              "RelativeToolTip": "Services\\TimeService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T17:58:54.097Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "TimeRequest.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Schemas\\TimeRequest.cs",
-              "RelativeDocumentMoniker": "Schemas\\TimeRequest.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Schemas\\TimeRequest.cs",
-              "RelativeToolTip": "Schemas\\TimeRequest.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T17:58:44.52Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "TimeController.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Controllers\\TimeController.cs",
-              "RelativeDocumentMoniker": "Controllers\\TimeController.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Controllers\\TimeController.cs",
-              "RelativeToolTip": "Controllers\\TimeController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T17:58:10.12Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "Timetable.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Models\\Timetable.cs",
-              "RelativeDocumentMoniker": "Models\\Timetable.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Models\\Timetable.cs",
-              "RelativeToolTip": "Models\\Timetable.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAjAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T17:53:55.659Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "StartService.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Services\\StartService.cs",
-              "RelativeDocumentMoniker": "Services\\StartService.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Services\\StartService.cs",
-              "RelativeToolTip": "Services\\StartService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T17:53:17.108Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "MeetService.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Services\\MeetService.cs",
-              "RelativeDocumentMoniker": "Services\\MeetService.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Services\\MeetService.cs",
-              "RelativeToolTip": "Services\\MeetService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T17:53:05.428Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "ApplicationDb.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\db\\ApplicationDb.cs",
-              "RelativeDocumentMoniker": "db\\ApplicationDb.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\db\\ApplicationDb.cs",
-              "RelativeToolTip": "db\\ApplicationDb.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAvAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T17:52:47.611Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "MeetRequest.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Schemas\\MeetRequest.cs",
-              "RelativeDocumentMoniker": "Schemas\\MeetRequest.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Schemas\\MeetRequest.cs",
-              "RelativeToolTip": "Schemas\\MeetRequest.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T17:52:33.222Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "StartRequest.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Schemas\\StartRequest.cs",
-              "RelativeDocumentMoniker": "Schemas\\StartRequest.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Schemas\\StartRequest.cs",
-              "RelativeToolTip": "Schemas\\StartRequest.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T17:52:23.78Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "MeetController.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Controllers\\MeetController.cs",
-              "RelativeDocumentMoniker": "Controllers\\MeetController.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Controllers\\MeetController.cs",
-              "RelativeToolTip": "Controllers\\MeetController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T17:52:04.811Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "StartController.cs",
-              "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Controllers\\StartController.cs",
-              "RelativeDocumentMoniker": "Controllers\\StartController.cs",
-              "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Controllers\\StartController.cs",
-              "RelativeToolTip": "Controllers\\StartController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-31T17:51:53.73Z",
+              "WhenOpened": "2026-03-31T18:24:03.467Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
               "ToolTip": "C:\\Users\\Tim\\Desktop\\PROD\\Meeting-of-legal-entities\\Backend\\Program.cs",
               "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAiAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-31T17:28:13.064Z",
               "EditorCaption": ""
