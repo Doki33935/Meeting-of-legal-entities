@@ -1,0 +1,31 @@
+# --- OS & Editor ---
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# --- Solution & Project Files (если они в корне) ---
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# --- Общие папки сборки (если вдруг вынесены) ---
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.vs/
+
+# --- Environment & Secrets ---
+# .env файлы лучше игнорировать глобально, 
+# а нужные (например .env.example) добавлять принудительно через !
+**/.env
+**/.env.local
+!**.env.example
