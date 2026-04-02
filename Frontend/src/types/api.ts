@@ -14,5 +14,6 @@ export interface StartDaySlot {
   slots: {
     time: string
     count: number
+    slot: string
   }[]
 }

@@ -123,12 +123,12 @@ function groupSlotsByDate(slots: StartSlotDto[]): StartDaySlot[] {
       grouped.set(key, {
         date: key,
         dayLabel: formatDayLabel(slot.slot),
-        slots: [{ time, count: slot.count }],
+        slots: [{ time, count: slot.count, slot: slot.slot }],
       })
       return
     }
 
-    current.slots.push({ time, count: slot.count })
+    current.slots.push({ time, count: slot.count, slot: slot.slot })
   })
 
   return Array.from(grouped.values())
@@ -261,23 +261,20 @@ function MeetingBookingPage() {
                   </div>
 
                   <div className="slots-grid">
-                    {day.slots.map((slot, index) => {
-                      const sourceSlot = slots.find((item) => formatDateTime(item.slot) === `${slot.time}`)
-                      return (
-                        <button
-                          key={`${day.date}-${slot.time}-${index}`}
-                          type="button"
-                          className={`slot-card ${selectedSlot?.slot === sourceSlot?.slot ? 'slot-card--selected' : ''}`}
-                          onClick={() => sourceSlot && setSelectedSlot(sourceSlot)}
-                        >
-                          <span className="slot-card__day">{slot.time}</span>
-                          <span className="slot-card__time">{day.dayLabel}</span>
-                          <span className="slot-card__status slot-card__status--available">
-                            {slot.count > 0 ? `${t.slotLegendAvailable} (${slot.count})` : t.notAvailable}
-                          </span>
-                        </button>
-                      )
-                    })}
+                    {day.slots.map((slot) => (
+                      <button
+                        key={slot.slot}
+                        type="button"
+                        className={`slot-card ${selectedSlot?.slot === slot.slot ? 'slot-card--selected' : ''}`}
+                        onClick={() => setSelectedSlot({ slot: slot.slot, count: slot.count })}
+                      >
+                        <span className="slot-card__day">{slot.time}</span>
+                        <span className="slot-card__time">{day.dayLabel}</span>
+                        <span className="slot-card__status slot-card__status--available">
+                          {slot.count > 0 ? `${t.slotLegendAvailable} (${slot.count})` : t.notAvailable}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               ))}
