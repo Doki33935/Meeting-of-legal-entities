@@ -1,0 +1,24 @@
+# .NET Core / .NET 8
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+[Bb]in/
+obj/
+*.pdb
+*.dll
+*.exe
+
+# Visual Studio специфика
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Entity Framework Core Migrations (если не хотите коммитить миграции)
+# Migrations/
+
+# Пользовательские секреты (никогда не коммитьте!)
+Properties/PublishProfiles/

@@ -1,24 +1,22 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Зависимости (самое важное!)
+node_modules/
 
-node_modules
-dist
-dist-ssr
+# Сборка и дист
+dist/
+build/
+coverage/
+.vite/
+
+# Системные файлы
+.DS_Store
 *.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Environment variables (секреты!)
+# Оставляем .env.example, чтобы другие разработчики знали, какие переменные нужны
+.env
+.env.local
+.env*.local
+
+# IDE
+.vscode/
+.idea/
