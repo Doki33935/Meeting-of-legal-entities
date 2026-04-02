@@ -202,7 +202,6 @@ function MeetingBookingPage() {
       <header className="topbar">
         <div>
           <p className="topbar__brand">{t.brand}</p>
-          <p className="topbar__meta">React + TypeScript + Vite</p>
         </div>
 
         <div className="topbar__controls">
@@ -331,9 +330,6 @@ function MeetingBookingPage() {
         </ul>
       </section>
 
-      <footer className="footer-note">
-        <span>{t.footer}</span>
-      </footer>
     </main>
   )
 }
