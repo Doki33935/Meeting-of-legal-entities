@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { createMeeting, getMeetingSlots } from './api/meeting'
+import { getMeetingSlots } from './api/meeting'
 import { useTheme } from './hooks/useTheme'
 import type { StartDaySlot, StartSlotDto } from './types/api'
 import './App.css'
@@ -19,9 +19,7 @@ const copy = {
     description:
       'Выберите дату, время и место встречи, проверьте список документов и посмотрите, кто к вам приедет.',
     primaryAction: 'Обновить слоты',
-    secondaryAction: 'Назначить встречу',
     loading: 'Загружаем доступные слоты...',
-    loadingSubmit: 'Отправляем заявку...',
     errorFallback: 'Не удалось загрузить данные.',
     empty: 'Пока нет доступных слотов.',
     availabilityTitle: 'Доступность по датам',
@@ -30,15 +28,6 @@ const copy = {
     documentsTitle: 'Что нужно подготовить',
     documentsDescription:
       'Список документов позже можно будет подстраивать под тип компании и роль подписанта.',
-    representativeTitle: 'Кто к вам едет',
-    representativeText:
-      'Пока здесь показана карточка-заглушка. Позже данные будут приходить с бэкенда вместе со слотом.',
-    reasonLabel: 'Комментарий к встрече',
-    reasonPlaceholder: 'Например: открытие счёта, выдача документов, уточнение данных',
-    submitAction: 'Отправить заявку на встречу',
-    submitted: 'Заявка отправлена. ID встречи: ',
-    selectedSlotPrefix: 'Выбранный слот:',
-    noSlot: 'Слот не выбран',
     dayLabel: 'Дата',
     countLabel: 'Доступно мест',
     notAvailable: 'Нет мест',
@@ -54,9 +43,7 @@ const copy = {
     description:
       'Choose the date, time, and location, review required documents, and see who will arrive.',
     primaryAction: 'Reload slots',
-    secondaryAction: 'Book a meeting',
     loading: 'Loading available slots...',
-    loadingSubmit: 'Sending request...',
     errorFallback: 'Failed to load data.',
     empty: 'No available slots yet.',
     availabilityTitle: 'Availability by date',
@@ -65,15 +52,6 @@ const copy = {
     documentsTitle: 'Documents to prepare',
     documentsDescription:
       'This list can later be adjusted by company type and signatory role.',
-    representativeTitle: 'Who is coming',
-    representativeText:
-      'This is a placeholder card for now. Later the data will come from the backend together with the slot.',
-    reasonLabel: 'Meeting note',
-    reasonPlaceholder: 'For example: account opening, document delivery, details clarification',
-    submitAction: 'Submit meeting request',
-    submitted: 'Request sent. Meeting ID: ',
-    selectedSlotPrefix: 'Selected slot:',
-    noSlot: 'No slot selected',
     dayLabel: 'Date',
     countLabel: 'Available seats',
     notAvailable: 'No seats',
@@ -137,10 +115,7 @@ function MeetingBookingPage() {
   const [locale, setLocale] = useState<Locale>('ru')
   const [slots, setSlots] = useState<StartSlotDto[]>([])
   const [selectedSlot, setSelectedSlot] = useState<StartSlotDto | null>(null)
-  const [reason, setReason] = useState('')
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
-  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
   const t = copy[locale]
@@ -175,33 +150,6 @@ function MeetingBookingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale])
 
-  const handleSubmit = async () => {
-    if (!selectedSlot) {
-      return
-    }
-
-    setSubmitting(true)
-    setError('')
-    setMessage('')
-
-    try {
-      const payload = {
-        id: new Date(selectedSlot.slot).getTime(),
-        reason: reason.trim() || 'Не указана причина',
-      }
-
-      console.log('[MeetingBookingPage] submitting meeting', payload)
-
-      await createMeeting(payload)
-      setMessage(`${t.submitted}${selectedSlot.slot}`)
-    } catch (cause) {
-      console.error('[MeetingBookingPage] Failed to submit meeting', cause)
-      setError(t.errorFallback)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   return (
     <main className="page">
       <header className="topbar">
@@ -231,9 +179,6 @@ function MeetingBookingPage() {
         <div className="hero-section__actions">
           <button type="button" className="button button--primary" onClick={() => void loadSlots()}>
             {t.primaryAction}
-          </button>
-          <button type="button" className="button button--secondary" onClick={handleSubmit}>
-            {t.secondaryAction}
           </button>
         </div>
       </section>
@@ -287,36 +232,14 @@ function MeetingBookingPage() {
         </article>
 
         <article className="card card--accent">
-          <h2 className="card__title">{t.representativeTitle}</h2>
+          <h2 className="card__title">{t.documentsTitle}</h2>
           <div className="info-block">
-            <p>{t.representativeText}</p>
+            <p>{t.documentsDescription}</p>
             <p>
-              <strong>{t.selectedSlotPrefix}</strong>{' '}
-              {selectedSlot ? formatDateTime(selectedSlot.slot) : t.noSlot}
+              <strong>{t.dayLabel}</strong>{' '}
+              {selectedSlot ? formatDateTime(selectedSlot.slot) : t.notAvailable}
             </p>
           </div>
-
-          <label className="field">
-            <span className="field__label">{t.reasonLabel}</span>
-            <textarea
-              className="field__control"
-              rows={4}
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              placeholder={t.reasonPlaceholder}
-            />
-          </label>
-
-          <button
-            type="button"
-            className="button button--primary button--full"
-            onClick={handleSubmit}
-            disabled={!selectedSlot || submitting}
-          >
-            {submitting ? t.loadingSubmit : t.submitAction}
-          </button>
-
-          {message ? <p className="state-text state-text--success">{message}</p> : null}
         </article>
       </section>
 
