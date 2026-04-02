@@ -6,25 +6,34 @@ interface RequestOptions extends RequestInit {
 
 export async function apiRequest<T>({ path, headers, ...options }: RequestOptions): Promise<T> {
   if (!API_URL) {
-    throw new Error('VITE_API_URL is not set')
+    const error = new Error('VITE_API_URL is not set')
+    console.error('[apiRequest]', error)
+    throw error
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-  })
+  try {
+    const response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+    })
 
-  if (!response.ok) {
-    const message = await response.text()
-    throw new Error(message || `Request failed with status ${response.status}`)
+    if (!response.ok) {
+      const message = await response.text()
+      const error = new Error(message || `Request failed with status ${response.status}`)
+      console.error('[apiRequest]', path, response.status, message)
+      throw error
+    }
+
+    if (response.status === 204) {
+      return undefined as T
+    }
+
+    return response.json() as Promise<T>
+  } catch (error) {
+    console.error('[apiRequest]', path, error)
+    throw error
   }
-
-  if (response.status === 204) {
-    return undefined as T
-  }
-
-  return response.json() as Promise<T>
 }
