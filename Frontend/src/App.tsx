@@ -41,7 +41,6 @@ const copy = {
     noSlot: 'Слот не выбран',
     dayLabel: 'Дата',
     countLabel: 'Доступно мест',
-    footer: 'Контракт с бэкендом: GET /start — слоты, POST /meet — заявка на встречу',
     notAvailable: 'Нет мест',
   },
   en: {
@@ -77,7 +76,6 @@ const copy = {
     noSlot: 'No slot selected',
     dayLabel: 'Date',
     countLabel: 'Available seats',
-    footer: 'Backend contract: GET /start — slots, POST /meet — meeting request',
     notAvailable: 'No seats',
   },
 } as const
@@ -159,9 +157,11 @@ function MeetingBookingPage() {
 
     try {
       const data = await getMeetingSlots()
+      console.log('[MeetingBookingPage] slots loaded', data)
       setSlots(data)
       setSelectedSlot(data[0] ?? null)
-    } catch {
+    } catch (cause) {
+      console.error('[MeetingBookingPage] Failed to load slots', cause)
       setError(t.errorFallback)
       setSlots([])
       setSelectedSlot(null)
@@ -185,12 +185,17 @@ function MeetingBookingPage() {
     setMessage('')
 
     try {
-      await createMeeting({
+      const payload = {
         id: new Date(selectedSlot.slot).getTime(),
         reason: reason.trim() || 'Не указана причина',
-      })
+      }
+
+      console.log('[MeetingBookingPage] submitting meeting', payload)
+
+      await createMeeting(payload)
       setMessage(`${t.submitted}${selectedSlot.slot}`)
-    } catch {
+    } catch (cause) {
+      console.error('[MeetingBookingPage] Failed to submit meeting', cause)
       setError(t.errorFallback)
     } finally {
       setSubmitting(false)
@@ -329,7 +334,6 @@ function MeetingBookingPage() {
           ))}
         </ul>
       </section>
-
     </main>
   )
 }
