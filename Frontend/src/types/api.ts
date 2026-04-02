@@ -1,7 +1,6 @@
 export interface StartSlotDto {
-  day: number
-  time: string
-  status: boolean
+  slot: string
+  count: number
 }
 
 export interface MeetRequestDto {
@@ -9,6 +8,11 @@ export interface MeetRequestDto {
   reason: string
 }
 
-export interface ThemeMode {
-  value: 'light' | 'dark'
+export interface StartDaySlot {
+  date: string
+  dayLabel: string
+  slots: {
+    time: string
+    count: number
+  }[]
 }

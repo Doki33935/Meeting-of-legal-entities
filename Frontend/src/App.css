@@ -134,6 +134,37 @@
   font-size: 14px;
 }
 
+.date-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.date-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.date-group__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.date-group__title {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.date-group__count {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
 .slots-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -360,7 +391,8 @@
     border-radius: 20px;
   }
 
-  .section-head {
+  .section-head,
+  .date-group__header {
     flex-direction: column;
     align-items: flex-start;
   }

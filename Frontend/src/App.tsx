@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { createMeeting, getMeetingSlots } from './api/meeting'
 import { useTheme } from './hooks/useTheme'
-import type { StartSlotDto } from './types/api'
+import type { StartDaySlot, StartSlotDto } from './types/api'
 import './App.css'
 
 type Locale = 'ru' | 'en'
@@ -10,10 +10,8 @@ type Locale = 'ru' | 'en'
 const copy = {
   ru: {
     brand: 'Встречи для юрлиц',
-    themeLabel: 'Тема',
     themeLight: 'Светлая',
     themeDark: 'Тёмная',
-    languageLabel: 'Язык',
     languageRu: 'Русский',
     languageEn: 'English',
     badge: 'Назначение встречи',
@@ -26,7 +24,7 @@ const copy = {
     loadingSubmit: 'Отправляем заявку...',
     errorFallback: 'Не удалось загрузить данные.',
     empty: 'Пока нет доступных слотов.',
-    availabilityTitle: 'Доступность по дням',
+    availabilityTitle: 'Доступность по датам',
     slotLegendAvailable: 'Свободно',
     slotLegendUnavailable: 'Занято',
     documentsTitle: 'Что нужно подготовить',
@@ -41,15 +39,15 @@ const copy = {
     submitted: 'Заявка отправлена. ID встречи: ',
     selectedSlotPrefix: 'Выбранный слот:',
     noSlot: 'Слот не выбран',
-    dayLabel: 'День',
+    dayLabel: 'Дата',
+    countLabel: 'Доступно мест',
     footer: 'Контракт с бэкендом: GET /start — слоты, POST /meet — заявка на встречу',
+    notAvailable: 'Нет мест',
   },
   en: {
     brand: 'Legal entity meetings',
-    themeLabel: 'Theme',
     themeLight: 'Light',
     themeDark: 'Dark',
-    languageLabel: 'Language',
     languageRu: 'Russian',
     languageEn: 'English',
     badge: 'Meeting scheduling',
@@ -62,7 +60,7 @@ const copy = {
     loadingSubmit: 'Sending request...',
     errorFallback: 'Failed to load data.',
     empty: 'No available slots yet.',
-    availabilityTitle: 'Availability by day',
+    availabilityTitle: 'Availability by date',
     slotLegendAvailable: 'Available',
     slotLegendUnavailable: 'Busy',
     documentsTitle: 'Documents to prepare',
@@ -77,8 +75,10 @@ const copy = {
     submitted: 'Request sent. Meeting ID: ',
     selectedSlotPrefix: 'Selected slot:',
     noSlot: 'No slot selected',
-    dayLabel: 'Day',
+    dayLabel: 'Date',
+    countLabel: 'Available seats',
     footer: 'Backend contract: GET /start — slots, POST /meet — meeting request',
+    notAvailable: 'No seats',
   },
 } as const
 
@@ -88,6 +88,51 @@ const documents = [
   'Устав или учредительные документы',
   'Доверенность, если подписант не учредитель',
 ]
+
+function formatDateTime(value: string) {
+  const date = new Date(value)
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+function formatDayLabel(value: string) {
+  return new Intl.DateTimeFormat('ru-RU', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+  }).format(new Date(value))
+}
+
+function groupSlotsByDate(slots: StartSlotDto[]): StartDaySlot[] {
+  const grouped = new Map<string, StartDaySlot>()
+
+  slots.forEach((slot) => {
+    const date = new Date(slot.slot)
+    const key = date.toISOString().slice(0, 10)
+    const current = grouped.get(key)
+    const time = new Intl.DateTimeFormat('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date)
+
+    if (!current) {
+      grouped.set(key, {
+        date: key,
+        dayLabel: formatDayLabel(slot.slot),
+        slots: [{ time, count: slot.count }],
+      })
+      return
+    }
+
+    current.slots.push({ time, count: slot.count })
+  })
+
+  return Array.from(grouped.values())
+}
 
 function MeetingBookingPage() {
   const { theme, toggleTheme } = useTheme()
@@ -106,12 +151,7 @@ function MeetingBookingPage() {
     document.documentElement.dataset.theme = theme
   }, [theme])
 
-  const normalizedSlots = useMemo(() => {
-    return slots.map((slot) => ({
-      ...slot,
-      status: Boolean(slot.status),
-    }))
-  }, [slots])
+  const slotsByDate = useMemo(() => groupSlotsByDate(slots), [slots])
 
   const loadSlots = async () => {
     setLoading(true)
@@ -120,7 +160,7 @@ function MeetingBookingPage() {
     try {
       const data = await getMeetingSlots()
       setSlots(data)
-      setSelectedSlot(data.find((slot) => slot.status) ?? data[0] ?? null)
+      setSelectedSlot(data[0] ?? null)
     } catch {
       setError(t.errorFallback)
       setSlots([])
@@ -146,10 +186,10 @@ function MeetingBookingPage() {
 
     try {
       await createMeeting({
-        id: selectedSlot.day,
+        id: new Date(selectedSlot.slot).getTime(),
         reason: reason.trim() || 'Не указана причина',
       })
-      setMessage(`${t.submitted}${selectedSlot.day}`)
+      setMessage(`${t.submitted}${selectedSlot.slot}`)
     } catch {
       setError(t.errorFallback)
     } finally {
@@ -207,28 +247,39 @@ function MeetingBookingPage() {
             <p className="state-text">{t.loading}</p>
           ) : error ? (
             <p className="state-text state-text--error">{error}</p>
-          ) : normalizedSlots.length === 0 ? (
+          ) : slotsByDate.length === 0 ? (
             <p className="state-text">{t.empty}</p>
           ) : (
-            <div className="slots-grid">
-              {normalizedSlots.map((slot) => (
-                <button
-                  key={`${slot.day}-${slot.time}`}
-                  type="button"
-                  className={`slot-card ${selectedSlot?.day === slot.day && selectedSlot?.time === slot.time ? 'slot-card--selected' : ''}`}
-                  onClick={() => slot.status && setSelectedSlot(slot)}
-                  disabled={!slot.status}
-                >
-                  <span className="slot-card__day">
-                    {t.dayLabel} {slot.day}
-                  </span>
-                  <span className="slot-card__time">{slot.time}</span>
-                  <span
-                    className={`slot-card__status ${slot.status ? 'slot-card__status--available' : 'slot-card__status--busy'}`}
-                  >
-                    {slot.status ? t.slotLegendAvailable : t.slotLegendUnavailable}
-                  </span>
-                </button>
+            <div className="date-groups">
+              {slotsByDate.map((day) => (
+                <div key={day.date} className="date-group">
+                  <div className="date-group__header">
+                    <h3 className="date-group__title">{day.dayLabel}</h3>
+                    <span className="date-group__count">
+                      {day.slots.reduce((sum, slot) => sum + slot.count, 0)} {t.countLabel}
+                    </span>
+                  </div>
+
+                  <div className="slots-grid">
+                    {day.slots.map((slot, index) => {
+                      const sourceSlot = slots.find((item) => formatDateTime(item.slot) === `${slot.time}`)
+                      return (
+                        <button
+                          key={`${day.date}-${slot.time}-${index}`}
+                          type="button"
+                          className={`slot-card ${selectedSlot?.slot === sourceSlot?.slot ? 'slot-card--selected' : ''}`}
+                          onClick={() => sourceSlot && setSelectedSlot(sourceSlot)}
+                        >
+                          <span className="slot-card__day">{slot.time}</span>
+                          <span className="slot-card__time">{day.dayLabel}</span>
+                          <span className="slot-card__status slot-card__status--available">
+                            {slot.count > 0 ? `${t.slotLegendAvailable} (${slot.count})` : t.notAvailable}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -240,7 +291,7 @@ function MeetingBookingPage() {
             <p>{t.representativeText}</p>
             <p>
               <strong>{t.selectedSlotPrefix}</strong>{' '}
-              {selectedSlot ? `${t.dayLabel} ${selectedSlot.day}, ${selectedSlot.time}` : t.noSlot}
+              {selectedSlot ? formatDateTime(selectedSlot.slot) : t.noSlot}
             </p>
           </div>
 
