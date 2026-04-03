@@ -4,8 +4,15 @@ export interface StartSlotDto {
 }
 
 export interface MeetRequestDto {
+  slot: string
+}
+
+export interface StaffDto {
   id: number
-  reason: string
+  name: string
+  age: number
+  description: string
+  image: string
 }
 
 export interface StartDaySlot {

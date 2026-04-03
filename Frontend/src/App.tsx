@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { getMeetingSlots } from './api/meeting'
+import { getAvailableStaff, getMeetingSlots } from './api/meeting'
 import { useTheme } from './hooks/useTheme'
-import type { StartDaySlot, StartSlotDto } from './types/api'
+import type { StaffDto, StartDaySlot, StartSlotDto } from './types/api'
 import './App.css'
 
 type Locale = 'ru' | 'en'
@@ -117,6 +117,9 @@ function MeetingBookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<StartSlotDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [staff, setStaff] = useState<StaffDto[]>([])
+  const [loadingStaff, setLoadingStaff] = useState(false)
+  const [staffError, setStaffError] = useState('')
 
   const t = copy[locale]
 
@@ -126,20 +129,43 @@ function MeetingBookingPage() {
 
   const slotsByDate = useMemo(() => groupSlotsByDate(slots), [slots])
 
+  const loadStaff = async (slot: string) => {
+    setLoadingStaff(true)
+    setStaffError('')
+    try {
+      const data = await getAvailableStaff({ slot })
+      console.log('[MeetingBookingPage] staff loaded', data)
+      setStaff(data)
+    } catch (cause) {
+      console.error('[MeetingBookingPage] Failed to load staff', cause)
+      setStaffError(t.errorFallback)
+      setStaff([])
+    } finally {
+      setLoadingStaff(false)
+    }
+  }
+
   const loadSlots = async () => {
     setLoading(true)
     setError('')
-
     try {
       const data = await getMeetingSlots()
       console.log('[MeetingBookingPage] slots loaded', data)
       setSlots(data)
-      setSelectedSlot(data[0] ?? null)
+
+      const first = data[0] ?? null
+      setSelectedSlot(first)
+      setStaff([])
+
+      if (first) {
+        void loadStaff(first.slot)
+      }
     } catch (cause) {
       console.error('[MeetingBookingPage] Failed to load slots', cause)
       setError(t.errorFallback)
       setSlots([])
       setSelectedSlot(null)
+      setStaff([])
     } finally {
       setLoading(false)
     }
@@ -215,7 +241,11 @@ function MeetingBookingPage() {
                         key={slot.slot}
                         type="button"
                         className={`slot-card ${selectedSlot?.slot === slot.slot ? 'slot-card--selected' : ''}`}
-                        onClick={() => setSelectedSlot({ slot: slot.slot, count: slot.count })}
+                        onClick={() => {
+                          const next = { slot: slot.slot, count: slot.count }
+                          setSelectedSlot(next)
+                          void loadStaff(next.slot)
+                        }}
                       >
                         <span className="slot-card__day">{slot.time}</span>
                         <span className="slot-card__time">{day.dayLabel}</span>
@@ -239,6 +269,26 @@ function MeetingBookingPage() {
               <strong>{t.dayLabel}</strong>{' '}
               {selectedSlot ? formatDateTime(selectedSlot.slot) : t.notAvailable}
             </p>
+          </div>
+          <div className="info-block">
+            <h3 className="card__title" style={{ marginTop: 0 }}>
+              {locale === 'ru' ? 'Кто приедет' : 'Who is coming'}
+            </h3>
+            {loadingStaff ? (
+              <p className="state-text">{locale === 'ru' ? 'Загружаем сотрудников...' : 'Loading staff...'}</p>
+            ) : staffError ? (
+              <p className="state-text state-text--error">{staffError}</p>
+            ) : staff.length === 0 ? (
+              <p className="state-text">{locale === 'ru' ? 'На выбранное время никто не доступен.' : 'No staff available for the selected time.'}</p>
+            ) : (
+              <ul className="chips">
+                {staff.map((s) => (
+                  <li key={s.id} className="chips__item" title={s.description}>
+                    {s.name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </article>
       </section>
