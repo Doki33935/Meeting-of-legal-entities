@@ -34,7 +34,7 @@ builder.Services.AddDbContext<ApplicationDb>(options =>
     ));
 
 // 5️ Регистрация сервисов
-builder.Services.AddScoped<TimeService>();
+builder.Services.AddScoped<BookService>();
 builder.Services.AddScoped<MeetService>();
 builder.Services.AddScoped<StartService>();
 

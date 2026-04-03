@@ -1,6 +1,6 @@
 ﻿namespace Backend.Schemas
 {
-    public class TimeRequest
+    public class BookRequest
     {
     }
 }
