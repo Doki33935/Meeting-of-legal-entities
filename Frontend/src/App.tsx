@@ -83,12 +83,44 @@ function formatDayLabel(value: string) {
   }).format(new Date(value))
 }
 
+function toYMD(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
+function getMonthGrid(anchor: Date) {
+  const year = anchor.getUTCFullYear()
+  const month = anchor.getUTCMonth()
+
+  const firstOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0))
+  const firstDowMon0 = (firstOfMonth.getUTCDay() + 6) % 7
+
+  const gridStart = new Date(firstOfMonth)
+  gridStart.setUTCDate(gridStart.getUTCDate() - firstDowMon0)
+
+  const totalDays = 42
+  const days: Date[] = []
+  for (let i = 0; i < totalDays; i++) {
+    const d = new Date(gridStart)
+    d.setUTCDate(gridStart.getUTCDate() + i)
+    days.push(d)
+  }
+
+  return { year, month, days }
+}
+
+const weekdayHeaderRu = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] as const
+
+function monthTitleRu(year: number, monthIndex0: number) {
+  const d = new Date(Date.UTC(year, monthIndex0, 1))
+  return new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }).format(d)
+}
+
 function groupSlotsByDate(slots: StartSlotDto[]): StartDaySlot[] {
   const grouped = new Map<string, StartDaySlot>()
 
   slots.forEach((slot) => {
     const date = new Date(slot.slot)
-    const key = date.toISOString().slice(0, 10)
+    const key = toYMD(date)
     const current = grouped.get(key)
     const time = new Intl.DateTimeFormat('ru-RU', {
       hour: '2-digit',
@@ -123,11 +155,28 @@ function MeetingBookingPage() {
 
   const t = copy[locale]
 
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const base = new Date()
+    // normalize to first of current month in UTC
+    return new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1))
+  })
+  const [selectedDateYMD, setSelectedDateYMD] = useState<string | null>(null)
+
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])
 
   const slotsByDate = useMemo(() => groupSlotsByDate(slots), [slots])
+  const availableDatesSet = useMemo(() => {
+    const set = new Set(slots.map((s) => toYMD(new Date(s.slot))))
+    return set
+  }, [slots])
+
+  const selectedDaySlots = useMemo(() => {
+    if (!selectedDateYMD) return []
+    const day = slotsByDate.find((d) => d.date === selectedDateYMD)
+    return day?.slots ?? []
+  }, [selectedDateYMD, slotsByDate])
 
   const loadStaff = async (slot: string) => {
     setLoadingStaff(true)
@@ -218,47 +267,116 @@ function MeetingBookingPage() {
             </span>
           </div>
 
-          {loading ? (
-            <p className="state-text">{t.loading}</p>
-          ) : error ? (
-            <p className="state-text state-text--error">{error}</p>
-          ) : slotsByDate.length === 0 ? (
-            <p className="state-text">{t.empty}</p>
-          ) : (
-            <div className="date-groups">
-              {slotsByDate.map((day) => (
-                <div key={day.date} className="date-group">
-                  <div className="date-group__header">
-                    <h3 className="date-group__title">{day.dayLabel}</h3>
-                    <span className="date-group__count">
-                      {day.slots.reduce((sum, slot) => sum + slot.count, 0)} {t.countLabel}
-                    </span>
-                  </div>
+          <div className="calendar">
+            <div className="calendar__header">
+              <button
+                type="button"
+                className="calendar__nav"
+                onClick={() => {
+                  setVisibleMonth((cur) => new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth() - 1, 1)))
+                  setSelectedDateYMD(null)
+                  setSelectedSlot(null)
+                  setStaff([])
+                }}
+              >
+                ‹
+              </button>
+              <div className="calendar__title">
+                {monthTitleRu(visibleMonth.getUTCFullYear(), visibleMonth.getUTCMonth())}
+              </div>
+              <button
+                type="button"
+                className="calendar__nav"
+                onClick={() => {
+                  setVisibleMonth((cur) => new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth() + 1, 1)))
+                  setSelectedDateYMD(null)
+                  setSelectedSlot(null)
+                  setStaff([])
+                }}
+              >
+                ›
+              </button>
+            </div>
 
-                  <div className="slots-grid">
-                    {day.slots.map((slot) => (
-                      <button
-                        key={slot.slot}
-                        type="button"
-                        className={`slot-card ${selectedSlot?.slot === slot.slot ? 'slot-card--selected' : ''}`}
-                        onClick={() => {
-                          const next = { slot: slot.slot, count: slot.count }
-                          setSelectedSlot(next)
-                          void loadStaff(next.slot)
-                        }}
-                      >
-                        <span className="slot-card__day">{slot.time}</span>
-                        <span className="slot-card__time">{day.dayLabel}</span>
-                        <span className="slot-card__status slot-card__status--available">
-                          {slot.count > 0 ? `${t.slotLegendAvailable} (${slot.count})` : t.notAvailable}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+            <div className="calendar__weekdays">
+              {weekdayHeaderRu.map((d) => (
+                <div key={d} className="calendar__weekday">
+                  {d}
                 </div>
               ))}
             </div>
-          )}
+
+            <div className="calendar__grid">
+              {getMonthGrid(visibleMonth).days.map((d) => {
+                const ymd = toYMD(d)
+                const dayNum = d.getUTCDate()
+                const isInMonth = d.getUTCMonth() === visibleMonth.getUTCMonth()
+                const hasSlots = availableDatesSet.has(ymd)
+                const isSelected = selectedDateYMD === ymd
+
+                return (
+                  <button
+                    key={ymd}
+                    type="button"
+                    className={`calendar__day ${isInMonth ? '' : 'calendar__day--out'} ${isSelected ? 'calendar__day--selected' : ''} ${hasSlots ? 'calendar__day--has' : ''}`}
+                    onClick={() => {
+                      setSelectedDateYMD(ymd)
+                      const first = selectedDaySlots.find((s) => toYMD(new Date(s.slot)) === ymd)?.slot
+                      if (first) {
+                        setSelectedSlot({ slot: first, count: 0 })
+                        void loadStaff(first)
+                      }
+                    }}
+                    disabled={!hasSlots}
+                    aria-label={`Day ${ymd}`}
+                  >
+                    {dayNum}
+                  </button>
+                )
+              })}
+            </div>
+
+            {loading ? (
+              <p className="state-text">{t.loading}</p>
+            ) : error ? (
+              <p className="state-text state-text--error">{error}</p>
+            ) : slots.length === 0 ? (
+              <p className="state-text">{t.empty}</p>
+            ) : selectedDateYMD ? (
+              <div className="slots-block">
+                <h3 className="card__title" style={{ fontSize: 18, marginBottom: 10 }}>
+                  {new Intl.DateTimeFormat('ru-RU', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'long',
+                  }).format(new Date(selectedDateYMD + 'T00:00:00Z'))}
+                </h3>
+                <div className="slots-grid">
+                  {selectedDaySlots.map((s) => (
+                    <button
+                      key={s.slot}
+                      type="button"
+                      className={`slot-card ${selectedSlot?.slot === s.slot ? 'slot-card--selected' : ''}`}
+                      onClick={() => {
+                        setSelectedSlot({ slot: s.slot, count: s.count })
+                        void loadStaff(s.slot)
+                      }}
+                    >
+                      <span className="slot-card__day">{s.time}</span>
+                      <span className="slot-card__time">{t.dayLabel}</span>
+                      <span className="slot-card__status slot-card__status--available">
+                        {s.count > 0 ? `${t.slotLegendAvailable} (${s.count})` : t.notAvailable}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="state-text">
+                {locale === 'ru' ? 'Выберите дату с доступными слотами.' : 'Select a date with available slots.'}
+              </p>
+            )}
+          </div>
         </article>
 
         <article className="card card--accent">
