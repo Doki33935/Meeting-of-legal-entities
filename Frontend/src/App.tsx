@@ -6,6 +6,7 @@ import type { StaffDto, StartDaySlot, StartSlotDto } from './types/api'
 import './App.css'
 
 type Locale = 'ru' | 'en'
+type BookingStep = 'calendar' | 'slot' | 'details'
 
 const copy = {
   ru: {
@@ -31,6 +32,28 @@ const copy = {
     dayLabel: 'Дата',
     countLabel: 'Доступно мест',
     notAvailable: 'Нет мест',
+    placeTitle: 'Место встречи',
+    placeEmpty: 'Место встречи будет показано после получения данных от backend.',
+    stepCalendar: 'Шаг 1',
+    stepSlot: 'Шаг 2',
+    stepDetails: 'Шаг 3',
+    stepCalendarLabel: 'Выберите дату',
+    stepSlotLabel: 'Выберите время',
+    stepDetailsLabel: 'Проверьте детали',
+    summaryTitle: 'Сводка встречи',
+    summaryEmpty: 'Сначала выберите дату и время встречи.',
+    selectedDate: 'Выбранная дата',
+    selectedTime: 'Выбранное время',
+    selectedCount: 'Доступных представителей',
+    loadingStaff: 'Загружаем сотрудников...',
+    noStaff: 'На выбранное время никто не доступен.',
+    selectDateHint: 'Сначала выберите дату с доступными слотами.',
+    selectSlotHint: 'Теперь выберите удобное время.',
+    noSlots: 'На эту дату нет доступных слотов.',
+    whoIsComing: 'Кто приедет',
+    representativeAge: 'Возраст',
+    chooseAnotherDate: 'Выбрать другую дату',
+    unavailable: 'Недоступно',
   },
   en: {
     brand: 'Legal entity meetings',
@@ -55,6 +78,28 @@ const copy = {
     dayLabel: 'Date',
     countLabel: 'Available seats',
     notAvailable: 'No seats',
+    placeTitle: 'Meeting place',
+    placeEmpty: 'The meeting place will be shown after the backend provides it.',
+    stepCalendar: 'Step 1',
+    stepSlot: 'Step 2',
+    stepDetails: 'Step 3',
+    stepCalendarLabel: 'Choose a date',
+    stepSlotLabel: 'Choose a time',
+    stepDetailsLabel: 'Review details',
+    summaryTitle: 'Meeting summary',
+    summaryEmpty: 'Select a meeting date and time first.',
+    selectedDate: 'Selected date',
+    selectedTime: 'Selected time',
+    selectedCount: 'Available representatives',
+    loadingStaff: 'Loading staff...',
+    noStaff: 'No staff available for the selected time.',
+    selectDateHint: 'Start by choosing a date with available slots.',
+    selectSlotHint: 'Now choose a convenient time.',
+    noSlots: 'No available slots for this date.',
+    whoIsComing: 'Who is coming',
+    representativeAge: 'Age',
+    chooseAnotherDate: 'Choose another date',
+    unavailable: 'Unavailable',
   },
 } as const
 
@@ -90,16 +135,13 @@ function toYMD(date: Date) {
 function getMonthGrid(anchor: Date) {
   const year = anchor.getUTCFullYear()
   const month = anchor.getUTCMonth()
-
   const firstOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0))
   const firstDowMon0 = (firstOfMonth.getUTCDay() + 6) % 7
-
   const gridStart = new Date(firstOfMonth)
   gridStart.setUTCDate(gridStart.getUTCDate() - firstDowMon0)
 
-  const totalDays = 42
   const days: Date[] = []
-  for (let i = 0; i < totalDays; i++) {
+  for (let i = 0; i < 42; i++) {
     const d = new Date(gridStart)
     d.setUTCDate(gridStart.getUTCDate() + i)
     days.push(d)
@@ -152,38 +194,32 @@ function MeetingBookingPage() {
   const [staff, setStaff] = useState<StaffDto[]>([])
   const [loadingStaff, setLoadingStaff] = useState(false)
   const [staffError, setStaffError] = useState('')
-
-  const t = copy[locale]
-
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const base = new Date()
-    // normalize to first of current month in UTC
     return new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1))
   })
   const [selectedDateYMD, setSelectedDateYMD] = useState<string | null>(null)
+
+  const t = copy[locale]
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])
 
   const slotsByDate = useMemo(() => groupSlotsByDate(slots), [slots])
-  const availableDatesSet = useMemo(() => {
-    const set = new Set(slots.map((s) => toYMD(new Date(s.slot))))
-    return set
-  }, [slots])
-
-  const selectedDaySlots = useMemo(() => {
-    if (!selectedDateYMD) return []
-    const day = slotsByDate.find((d) => d.date === selectedDateYMD)
-    return day?.slots ?? []
+  const availableDatesSet = useMemo(() => new Set(slots.map((s) => toYMD(new Date(s.slot)))), [slots])
+  const selectedDay = useMemo(() => {
+    if (!selectedDateYMD) return null
+    return slotsByDate.find((d) => d.date === selectedDateYMD) ?? null
   }, [selectedDateYMD, slotsByDate])
+  const selectedDaySlots = selectedDay?.slots ?? []
+  const bookingStep: BookingStep = !selectedDateYMD ? 'calendar' : !selectedSlot ? 'slot' : 'details'
 
   const loadStaff = async (slot: string) => {
     setLoadingStaff(true)
     setStaffError('')
     try {
       const data = await getAvailableStaff({ slot })
-      console.log('[MeetingBookingPage] staff loaded', data)
       setStaff(data)
     } catch (cause) {
       console.error('[MeetingBookingPage] Failed to load staff', cause)
@@ -199,22 +235,30 @@ function MeetingBookingPage() {
     setError('')
     try {
       const data = await getMeetingSlots()
-      console.log('[MeetingBookingPage] slots loaded', data)
       setSlots(data)
 
       const first = data[0] ?? null
       setSelectedSlot(first)
       setStaff([])
+      setStaffError('')
 
       if (first) {
+        const firstDate = new Date(first.slot)
+        setSelectedDateYMD(toYMD(firstDate))
+        setVisibleMonth(new Date(Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), 1)))
         void loadStaff(first.slot)
+      } else {
+        setSelectedDateYMD(null)
+        setSelectedSlot(null)
       }
     } catch (cause) {
       console.error('[MeetingBookingPage] Failed to load slots', cause)
       setError(t.errorFallback)
       setSlots([])
       setSelectedSlot(null)
+      setSelectedDateYMD(null)
       setStaff([])
+      setStaffError('')
     } finally {
       setLoading(false)
     }
@@ -231,7 +275,6 @@ function MeetingBookingPage() {
         <div>
           <p className="topbar__brand">{t.brand}</p>
         </div>
-
         <div className="topbar__controls">
           <button type="button" className="chip-button" onClick={toggleTheme}>
             {theme === 'light' ? t.themeDark : t.themeLight}
@@ -250,7 +293,6 @@ function MeetingBookingPage() {
         <span className="hero-section__badge">{t.badge}</span>
         <h1 className="hero-section__title">{t.title}</h1>
         <p className="hero-section__description">{t.description}</p>
-
         <div className="hero-section__actions">
           <button type="button" className="button button--primary" onClick={() => void loadSlots()}>
             {t.primaryAction}
@@ -258,10 +300,28 @@ function MeetingBookingPage() {
         </div>
       </section>
 
+      <section className="summary-strip card">
+        <div className={`summary-step ${bookingStep === 'calendar' ? 'summary-step--active' : ''}`}>
+          <span className="summary-step__badge">{t.stepCalendar}</span>
+          <strong>{t.stepCalendarLabel}</strong>
+        </div>
+        <div className={`summary-step ${bookingStep === 'slot' ? 'summary-step--active' : ''}`}>
+          <span className="summary-step__badge">{t.stepSlot}</span>
+          <strong>{t.stepSlotLabel}</strong>
+        </div>
+        <div className={`summary-step ${bookingStep === 'details' ? 'summary-step--active' : ''}`}>
+          <span className="summary-step__badge">{t.stepDetails}</span>
+          <strong>{t.stepDetailsLabel}</strong>
+        </div>
+      </section>
+
       <section className="grid-section">
-        <article className="card">
+        <article className="card booking-card booking-card--calendar">
           <div className="section-head">
-            <h2 className="card__title">{t.availabilityTitle}</h2>
+            <div>
+              <h2 className="card__title">{t.availabilityTitle}</h2>
+              <p className="card__subtitle">{t.selectDateHint}</p>
+            </div>
             <span className="section-head__legend">
               {t.slotLegendAvailable} / {t.slotLegendUnavailable}
             </span>
@@ -274,9 +334,6 @@ function MeetingBookingPage() {
                 className="calendar__nav"
                 onClick={() => {
                   setVisibleMonth((cur) => new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth() - 1, 1)))
-                  setSelectedDateYMD(null)
-                  setSelectedSlot(null)
-                  setStaff([])
                 }}
               >
                 ‹
@@ -289,9 +346,6 @@ function MeetingBookingPage() {
                 className="calendar__nav"
                 onClick={() => {
                   setVisibleMonth((cur) => new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth() + 1, 1)))
-                  setSelectedDateYMD(null)
-                  setSelectedSlot(null)
-                  setStaff([])
                 }}
               >
                 ›
@@ -321,10 +375,15 @@ function MeetingBookingPage() {
                     className={`calendar__day ${isInMonth ? '' : 'calendar__day--out'} ${isSelected ? 'calendar__day--selected' : ''} ${hasSlots ? 'calendar__day--has' : ''}`}
                     onClick={() => {
                       setSelectedDateYMD(ymd)
-                      const first = selectedDaySlots.find((s) => toYMD(new Date(s.slot)) === ymd)?.slot
+                      const first = slotsByDate.find((day) => day.date === ymd)?.slots[0]?.slot ?? null
                       if (first) {
-                        setSelectedSlot({ slot: first, count: 0 })
+                        const source = slots.find((s) => s.slot === first) ?? null
+                        setSelectedSlot(source)
                         void loadStaff(first)
+                      } else {
+                        setSelectedSlot(null)
+                        setStaff([])
+                        setStaffError('')
                       }
                     }}
                     disabled={!hasSlots}
@@ -337,93 +396,156 @@ function MeetingBookingPage() {
             </div>
 
             {loading ? (
-              <p className="state-text">{t.loading}</p>
+              <div className="state-card state-card--loading">
+                <p className="state-text">{t.loading}</p>
+              </div>
             ) : error ? (
-              <p className="state-text state-text--error">{error}</p>
+              <div className="state-card state-card--error">
+                <p className="state-text state-text--error">{error}</p>
+              </div>
             ) : slots.length === 0 ? (
-              <p className="state-text">{t.empty}</p>
+              <div className="state-card">
+                <p className="state-text">{t.empty}</p>
+              </div>
             ) : selectedDateYMD ? (
               <div className="slots-block">
-                <h3 className="card__title" style={{ fontSize: 18, marginBottom: 10 }}>
-                  {new Intl.DateTimeFormat('ru-RU', {
-                    weekday: 'long',
-                    day: '2-digit',
-                    month: 'long',
-                  }).format(new Date(selectedDateYMD + 'T00:00:00Z'))}
-                </h3>
+                <div className="slots-block__head">
+                  <div>
+                    <h3 className="card__title card__title--small">{selectedDay?.dayLabel ?? t.dayLabel}</h3>
+                    <p className="card__subtitle">{selectedDaySlots.length > 0 ? t.selectSlotHint : t.noSlots}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={() => {
+                      setSelectedDateYMD(null)
+                      setSelectedSlot(null)
+                      setStaff([])
+                      setStaffError('')
+                    }}
+                  >
+                    {t.chooseAnotherDate}
+                  </button>
+                </div>
+
                 <div className="slots-grid">
-                  {selectedDaySlots.map((s) => (
-                    <button
-                      key={s.slot}
-                      type="button"
-                      className={`slot-card ${selectedSlot?.slot === s.slot ? 'slot-card--selected' : ''}`}
-                      onClick={() => {
-                        setSelectedSlot({ slot: s.slot, count: s.count })
-                        void loadStaff(s.slot)
-                      }}
-                    >
-                      <span className="slot-card__day">{s.time}</span>
-                      <span className="slot-card__time">{t.dayLabel}</span>
-                      <span className="slot-card__status slot-card__status--available">
-                        {s.count > 0 ? `${t.slotLegendAvailable} (${s.count})` : t.notAvailable}
-                      </span>
-                    </button>
-                  ))}
+                  {selectedDaySlots.length > 0 ? (
+                    selectedDaySlots.map((s) => {
+                      const isSelected = selectedSlot?.slot === s.slot
+                      const isAvailable = s.count > 0
+
+                      return (
+                        <button
+                          key={s.slot}
+                          type="button"
+                          className={`slot-card ${isSelected ? 'slot-card--selected' : ''}`}
+                          onClick={() => {
+                            const source = slots.find((item) => item.slot === s.slot) ?? { slot: s.slot, count: s.count }
+                            setSelectedSlot(source)
+                            void loadStaff(s.slot)
+                          }}
+                        >
+                          <span className="slot-card__time">{s.time}</span>
+                          <span className={`slot-card__status ${isAvailable ? 'slot-card__status--available' : 'slot-card__status--busy'}`}>
+                            {isAvailable ? `${t.slotLegendAvailable} (${s.count})` : t.notAvailable}
+                          </span>
+                          <span className="slot-card__meta">{isAvailable ? t.countLabel : t.unavailable}</span>
+                        </button>
+                      )
+                    })
+                  ) : (
+                    <div className="state-card state-card--muted">
+                      <p className="state-text">{t.noSlots}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
-              <p className="state-text">
-                {locale === 'ru' ? 'Выберите дату с доступными слотами.' : 'Select a date with available slots.'}
-              </p>
+              <div className="state-card state-card--muted">
+                <p className="state-text">{t.selectDateHint}</p>
+              </div>
             )}
           </div>
         </article>
 
-        <article className="card card--accent">
-          <h2 className="card__title">{t.documentsTitle}</h2>
-          <div className="info-block">
-            <p>{t.documentsDescription}</p>
-            <p>
-              <strong>{t.dayLabel}</strong>{' '}
-              {selectedSlot ? formatDateTime(selectedSlot.slot) : t.notAvailable}
-            </p>
-          </div>
-          <div className="info-block">
-            <h3 className="card__title" style={{ marginTop: 0 }}>
-              {locale === 'ru' ? 'Кто приедет' : 'Who is coming'}
-            </h3>
-            {loadingStaff ? (
-              <p className="state-text">{locale === 'ru' ? 'Загружаем сотрудников...' : 'Loading staff...'}</p>
-            ) : staffError ? (
-              <p className="state-text state-text--error">{staffError}</p>
-            ) : staff.length === 0 ? (
-              <p className="state-text">{locale === 'ru' ? 'На выбранное время никто не доступен.' : 'No staff available for the selected time.'}</p>
+        <article className="card booking-card booking-card--details">
+          <div className="summary-panel">
+            <h2 className="card__title">{t.summaryTitle}</h2>
+            {selectedSlot ? (
+              <div className="summary-panel__content">
+                <div className="summary-row">
+                  <span className="summary-row__label">{t.selectedDate}</span>
+                  <strong>{formatDayLabel(selectedSlot.slot)}</strong>
+                </div>
+                <div className="summary-row">
+                  <span className="summary-row__label">{t.selectedTime}</span>
+                  <strong>{formatDateTime(selectedSlot.slot).split(', ')[1] ?? formatDateTime(selectedSlot.slot)}</strong>
+                </div>
+                <div className="summary-row">
+                  <span className="summary-row__label">{t.selectedCount}</span>
+                  <strong>{selectedSlot.count}</strong>
+                </div>
+              </div>
             ) : (
-              <ul className="chips">
+              <p className="state-text state-text--muted">{t.summaryEmpty}</p>
+            )}
+          </div>
+
+          <div className="info-block">
+            <div className="section-head section-head--stacked">
+              <div>
+                <h3 className="card__title card__title--small">{t.whoIsComing}</h3>
+                <p className="card__subtitle">{t.selectSlotHint}</p>
+              </div>
+            </div>
+
+            {loadingStaff ? (
+              <div className="state-card state-card--loading">
+                <p className="state-text">{t.loadingStaff}</p>
+              </div>
+            ) : staffError ? (
+              <div className="state-card state-card--error">
+                <p className="state-text state-text--error">{staffError}</p>
+              </div>
+            ) : staff.length === 0 ? (
+              <div className="state-card state-card--muted">
+                <p className="state-text">{t.noStaff}</p>
+              </div>
+            ) : (
+              <ul className="staff-grid">
                 {staff.map((s) => (
-                  <li key={s.id} className="chips__item" title={s.description}>
-                    {s.name}
+                  <li key={s.id} className="staff-card">
+                    <img className="staff-card__image" src={s.image} alt={s.name} />
+                    <div className="staff-card__body">
+                      <strong className="staff-card__name">{s.name}</strong>
+                      <p className="staff-card__meta">
+                        {t.representativeAge}: {s.age}
+                      </p>
+                      <p className="staff-card__description">{s.description}</p>
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
+
+          <div className="info-block">
+            <h3 className="card__title card__title--small">{t.placeTitle}</h3>
+            <p className="state-text state-text--muted">{t.placeEmpty}</p>
+          </div>
+
+          <div className="info-block">
+            <h3 className="card__title card__title--small">{t.documentsTitle}</h3>
+            <p className="documents-section__text">{t.documentsDescription}</p>
+            <ul className="chips chips--stacked">
+              {documents.map((document) => (
+                <li key={document} className="chips__item">
+                  {document}
+                </li>
+              ))}
+            </ul>
+          </div>
         </article>
-      </section>
-
-      <section className="card documents-section">
-        <div>
-          <h2 className="card__title">{t.documentsTitle}</h2>
-          <p className="documents-section__text">{t.documentsDescription}</p>
-        </div>
-
-        <ul className="chips">
-          {documents.map((document) => (
-            <li key={document} className="chips__item">
-              {document}
-            </li>
-          ))}
-        </ul>
       </section>
     </main>
   )
