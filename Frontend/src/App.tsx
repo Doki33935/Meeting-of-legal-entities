@@ -54,6 +54,13 @@ const copy = {
     representativeAge: 'Возраст',
     chooseAnotherDate: 'Выбрать другую дату',
     unavailable: 'Недоступно',
+    specializationTitle: 'Специализация',
+    specializationAny: 'Любая специализация',
+    selectSpecialist: 'Выберите специалиста',
+    bookCta: 'Назначить встречу',
+    bookSuccess: 'Встреча назначена. Мы подтвердим детали по контакту в заявке.',
+    bookError: 'Не удалось назначить встречу. Попробуйте позже.',
+    summarySpecialist: 'Выбранный специалист',
   },
   en: {
     brand: 'Legal entity meetings',
@@ -100,6 +107,13 @@ const copy = {
     representativeAge: 'Age',
     chooseAnotherDate: 'Choose another date',
     unavailable: 'Unavailable',
+    specializationTitle: 'Specialization',
+    specializationAny: 'Any specialization',
+    selectSpecialist: 'Select a specialist',
+    bookCta: 'Book meeting',
+    bookSuccess: 'Meeting booked. We will confirm the details via your contacts.',
+    bookError: 'Could not book the meeting. Please try again.',
+    summarySpecialist: 'Chosen specialist',
   },
 } as const
 
@@ -109,6 +123,35 @@ const documents = [
   'Устав или учредительные документы',
   'Доверенность, если подписант не учредитель',
 ]
+
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
+const defaultLocale = (import.meta.env.VITE_DEFAULT_LANGUAGE === 'en' ? 'en' : 'ru') as Locale
+
+const staffSpecializationMap: Record<string, string> = {
+  'Alice Johnson': 'Корпоративное право',
+  'Bob Smith': 'Налоги и бухгалтерия',
+  'Charlie Brown': 'Помощник юриста',
+  'Diana Prince': 'Договорное право',
+  'Ethan Hunt': 'Риск-менеджмент',
+  'Fiona Gallagher': 'HR / трудовое право',
+  'George Martin': 'Стратегическое консультирование',
+  'Hannah Lee': 'Сопровождение сделок',
+  'Ivan Petrov': 'Комплаенс',
+  'Julia Roberts': 'Бизнес-консалтинг',
+}
+
+function enrichStaff(data: StaffDto[]): StaffDto[] {
+  return data.map((s) => ({
+    ...s,
+    specialization: s.specialization ?? staffSpecializationMap[s.name] ?? 'Корпоративное право',
+  }))
+}
+
+function getImageUrl(path: string) {
+  if (!path) return path
+  if (/^https?:\/\//i.test(path)) return path
+  return `${API_URL ?? ''}${path}`
+}
 
 function formatDateTime(value: string) {
   const date = new Date(value)
@@ -186,12 +229,16 @@ function groupSlotsByDate(slots: StartSlotDto[]): StartDaySlot[] {
 
 function MeetingBookingPage() {
   const { theme, toggleTheme } = useTheme()
-  const [locale, setLocale] = useState<Locale>('ru')
+  const [locale, setLocale] = useState<Locale>(defaultLocale)
   const [slots, setSlots] = useState<StartSlotDto[]>([])
   const [selectedSlot, setSelectedSlot] = useState<StartSlotDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [staff, setStaff] = useState<StaffDto[]>([])
+  const [selectedStaff, setSelectedStaff] = useState<StaffDto | null>(null)
+  const [clientSpecialization, setClientSpecialization] = useState<string>('all')
+  const [bookingStatus, setBookingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [bookingMessage, setBookingMessage] = useState('')
   const [loadingStaff, setLoadingStaff] = useState(false)
   const [staffError, setStaffError] = useState('')
   const [visibleMonth, setVisibleMonth] = useState(() => {
@@ -214,13 +261,32 @@ function MeetingBookingPage() {
   }, [selectedDateYMD, slotsByDate])
   const selectedDaySlots = selectedDay?.slots ?? []
   const bookingStep: BookingStep = !selectedDateYMD ? 'calendar' : !selectedSlot ? 'slot' : 'details'
+  const specializationOptions = useMemo(
+    () => ['all', ...new Set(staff.map((s) => s.specialization ?? 'Корпоративное право'))],
+    [staff],
+  )
+  const filteredStaff = useMemo(
+    () =>
+      clientSpecialization === 'all'
+        ? staff
+        : staff.filter((s) => s.specialization === clientSpecialization),
+    [clientSpecialization, staff],
+  )
 
   const loadStaff = async (slot: string) => {
     setLoadingStaff(true)
     setStaffError('')
+    setSelectedStaff(null)
+    setBookingStatus('idle')
+    setBookingMessage('')
     try {
-      const data = await getAvailableStaff({ slot })
+      const data = enrichStaff(await getAvailableStaff({ slot }))
       setStaff(data)
+      const preferred =
+        clientSpecialization === 'all'
+          ? data[0] ?? null
+          : data.find((s) => s.specialization === clientSpecialization) ?? null
+      setSelectedStaff(preferred)
     } catch (cause) {
       console.error('[MeetingBookingPage] Failed to load staff', cause)
       setStaffError(t.errorFallback)
@@ -240,7 +306,11 @@ function MeetingBookingPage() {
       const first = data[0] ?? null
       setSelectedSlot(first)
       setStaff([])
+      setSelectedStaff(null)
       setStaffError('')
+      setClientSpecialization('all')
+      setBookingStatus('idle')
+      setBookingMessage('')
 
       if (first) {
         const firstDate = new Date(first.slot)
@@ -259,6 +329,9 @@ function MeetingBookingPage() {
       setSelectedDateYMD(null)
       setStaff([])
       setStaffError('')
+      setSelectedStaff(null)
+      setBookingStatus('idle')
+      setBookingMessage('')
     } finally {
       setLoading(false)
     }
@@ -268,6 +341,25 @@ function MeetingBookingPage() {
     void loadSlots()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale])
+
+  const handleBook = async () => {
+    if (!selectedSlot || !selectedStaff) return
+    setBookingStatus('loading')
+    setBookingMessage('')
+    try {
+      const response = await bookMeeting({
+        slot: selectedSlot.slot,
+        staffId: selectedStaff.id,
+        specialization: clientSpecialization === 'all' ? selectedStaff.specialization : clientSpecialization,
+      })
+      setBookingStatus('success')
+      setBookingMessage(response.message ?? t.bookSuccess)
+    } catch (cause) {
+      console.error('[MeetingBookingPage] Failed to book meeting', cause)
+      setBookingStatus('error')
+      setBookingMessage(t.bookError)
+    }
+  }
 
   return (
     <main className="page">
@@ -384,6 +476,9 @@ function MeetingBookingPage() {
                         setSelectedSlot(null)
                         setStaff([])
                         setStaffError('')
+                        setSelectedStaff(null)
+                        setBookingStatus('idle')
+                        setBookingMessage('')
                       }
                     }}
                     disabled={!hasSlots}
@@ -422,6 +517,9 @@ function MeetingBookingPage() {
                       setSelectedSlot(null)
                       setStaff([])
                       setStaffError('')
+                      setSelectedStaff(null)
+                      setBookingStatus('idle')
+                      setBookingMessage('')
                     }}
                   >
                     {t.chooseAnotherDate}
@@ -440,10 +538,13 @@ function MeetingBookingPage() {
                           type="button"
                           className={`slot-card ${isSelected ? 'slot-card--selected' : ''}`}
                           onClick={() => {
-                            const source = slots.find((item) => item.slot === s.slot) ?? { slot: s.slot, count: s.count }
-                            setSelectedSlot(source)
-                            void loadStaff(s.slot)
-                          }}
+                        const source = slots.find((item) => item.slot === s.slot) ?? { slot: s.slot, count: s.count }
+                        setSelectedSlot(source)
+                        setSelectedStaff(null)
+                        setBookingStatus('idle')
+                        setBookingMessage('')
+                        void loadStaff(s.slot)
+                      }}
                         >
                           <span className="slot-card__time">{s.time}</span>
                           <span className={`slot-card__status ${isAvailable ? 'slot-card__status--available' : 'slot-card__status--busy'}`}>
@@ -485,6 +586,12 @@ function MeetingBookingPage() {
                   <span className="summary-row__label">{t.selectedCount}</span>
                   <strong>{selectedSlot.count}</strong>
                 </div>
+                {selectedStaff && (
+                  <div className="summary-row">
+                    <span className="summary-row__label">{t.summarySpecialist}</span>
+                    <strong>{selectedStaff.name}</strong>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="state-text state-text--muted">{t.summaryEmpty}</p>
@@ -512,20 +619,70 @@ function MeetingBookingPage() {
                 <p className="state-text">{t.noStaff}</p>
               </div>
             ) : (
-              <ul className="staff-grid">
-                {staff.map((s) => (
-                  <li key={s.id} className="staff-card">
-                    <img className="staff-card__image" src={s.image} alt={s.name} />
-                    <div className="staff-card__body">
-                      <strong className="staff-card__name">{s.name}</strong>
-                      <p className="staff-card__meta">
-                        {t.representativeAge}: {s.age}
-                      </p>
-                      <p className="staff-card__description">{s.description}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <p className="card__subtitle">{t.specializationTitle}</p>
+                <div className="chips chips--wrap">
+                  <button
+                    type="button"
+                    className={`chip-button chip-button--ghost ${clientSpecialization === 'all' ? 'chip-button--selected' : ''}`}
+                    onClick={() => {
+                      setClientSpecialization('all')
+                      setSelectedStaff(null)
+                    }}
+                  >
+                    {t.specializationAny}
+                  </button>
+                  {specializationOptions
+                    .filter((spec) => spec !== 'all')
+                    .map((spec) => (
+                      <button
+                        key={spec}
+                        type="button"
+                        className={`chip-button chip-button--ghost ${clientSpecialization === spec ? 'chip-button--selected' : ''}`}
+                        onClick={() => {
+                          setClientSpecialization(spec)
+                          const candidate = staff.find((s) => s.specialization === spec) ?? null
+                          setSelectedStaff(candidate)
+                        }}
+                      >
+                        {spec}
+                      </button>
+                    ))}
+                </div>
+
+                <ul className="staff-grid">
+                  {filteredStaff.map((s) => {
+                    const isSelected = selectedStaff?.id === s.id
+                    return (
+                      <li
+                        key={s.id}
+                        className={`staff-card staff-card--selectable ${isSelected ? 'is-selected' : ''}`}
+                        onClick={() => {
+                          setSelectedStaff(s)
+                          setBookingStatus('idle')
+                          setBookingMessage('')
+                        }}
+                      >
+                        <img className="staff-card__image" src={getImageUrl(s.image)} alt={s.name} loading="lazy" />
+                        <div className="staff-card__body">
+                          <strong className="staff-card__name">{s.name}</strong>
+                          <p className="staff-card__meta">
+                            {t.representativeAge}: {s.age}
+                          </p>
+                          <p className="staff-card__meta">{s.specialization}</p>
+                          <p className="staff-card__description">{s.description}</p>
+                        </div>
+                      </li>
+                    )
+                  })}
+
+                  {filteredStaff.length === 0 && (
+                    <li className="state-card state-card--muted">
+                      <p className="state-text">{t.noStaff}</p>
+                    </li>
+                  )}
+                </ul>
+              </>
             )}
           </div>
 
@@ -547,6 +704,33 @@ function MeetingBookingPage() {
           </div>
         </article>
       </section>
+
+      {selectedSlot && selectedStaff && (
+        <div className="booking-toast" role="status" aria-live="polite">
+          <div className="booking-toast__info">
+            <p className="booking-toast__title">{t.bookCta}</p>
+            <p className="booking-toast__line">
+              {formatDayLabel(selectedSlot.slot)} • {formatDateTime(selectedSlot.slot).split(', ')[1] ?? ''}
+            </p>
+            <p className="booking-toast__line">
+              {selectedStaff.name} · {selectedStaff.specialization}
+            </p>
+            {bookingMessage && (
+              <p className={`booking-toast__message ${bookingStatus === 'error' ? 'is-error' : 'is-success'}`}>
+                {bookingMessage}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="button button--primary booking-toast__action"
+            onClick={() => void handleBook()}
+            disabled={bookingStatus === 'loading'}
+          >
+            {bookingStatus === 'loading' ? 'Назначаем…' : t.bookCta}
+          </button>
+        </div>
+      )}
     </main>
   )
 }

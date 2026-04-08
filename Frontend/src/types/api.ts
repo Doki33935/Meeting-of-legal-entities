@@ -13,6 +13,19 @@ export interface StaffDto {
   age: number
   description: string
   image: string
+  specialization?: string
+}
+
+export interface BookRequestDto {
+  slot: string
+  staffId: number
+  specialization?: string
+  note?: string
+}
+
+export interface BookResponseDto {
+  success: boolean
+  message?: string
 }
 
 export interface StartDaySlot {
