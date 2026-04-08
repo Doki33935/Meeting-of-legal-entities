@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { getAvailableStaff, getMeetingSlots } from './api/meeting'
+import { bookMeeting, getAvailableStaff, getMeetingSlots } from './api/meeting'
 import { useTheme } from './hooks/useTheme'
 import type { StaffDto, StartDaySlot, StartSlotDto } from './types/api'
 import './App.css'
