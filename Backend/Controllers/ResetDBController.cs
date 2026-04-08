@@ -26,6 +26,9 @@ namespace Backend.Controllers
 
                     DROP TABLE IF EXISTS timetable;
                     DROP TABLE IF EXISTS staff;
+                    DROP TABLE IF EXISTS users;
+                    DROP TABLE IF EXISTS Appointments;
+                    
 
                     CREATE TABLE staff (
                         Id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,9 +39,20 @@ namespace Backend.Controllers
                     );
 
                     CREATE TABLE timetable (
-                        Id INT NOT NULL,
+                        Id INT AUTO_INCREMENT PRIMARY KEY, 
+                        StaffId INT NOT NULL,                      
                         Slot DATETIME NOT NULL,
-                        FOREIGN KEY (Id) REFERENCES staff(Id) ON DELETE CASCADE
+                        FOREIGN KEY (StaffId) REFERENCES staff(Id) ON DELETE CASCADE
+                    );
+
+                    -- 🔹 Создаём новую таблицу Appointments
+                    CREATE TABLE Appointments (
+                        Id INT AUTO_INCREMENT PRIMARY KEY,
+                        Token VARCHAR(255) NOT NULL,
+                        StaffId INT NOT NULL,
+                        Reason VARCHAR(500) NOT NULL,
+                        AppointmentTime DATETIME NOT NULL,
+                        FOREIGN KEY (StaffId) REFERENCES staff(Id)
                     );
 
                     -- 🔹 Заполняем staff
@@ -54,8 +68,14 @@ namespace Backend.Controllers
                     ('Ivan Petrov', 38, 'Compliance officer', '/images/staff/ivan.jpg'),
                     ('Julia Roberts', 42, 'Business consultant', '/images/staff/julia.jpg');
 
+                    -- 🔹 Заполняем Appointments примерами
+                    INSERT INTO Appointments (Token, StaffId, Reason, AppointmentTime) VALUES
+                    ('token_abc123', 1, 'Consultation', '2026-04-10 10:00:00'),
+                    ('token_xyz789', 2, 'Follow-up', '2026-04-11 14:30:00'),
+                    ('token_abc123', 1, 'Review', '2026-04-12 09:00:00');
+
                     -- 🔹 Заполняем timetable (свободные слоты)
-                    INSERT INTO timetable (Id, Slot) VALUES
+                    INSERT INTO timetable (StaffId, Slot) VALUES
 
                     -- ===== ДЕНЬ 1 =====
                     (1, '2026-04-01 10:00:00'), (2, '2026-04-01 10:00:00'), (3, '2026-04-01 10:00:00'),

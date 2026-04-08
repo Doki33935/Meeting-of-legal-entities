@@ -36,7 +36,12 @@ builder.Services.AddDbContext<ApplicationDb>(options =>
 // 5️ Регистрация сервисов
 builder.Services.AddScoped<BookService>();
 builder.Services.AddScoped<MeetService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CookieTokenService>();
 builder.Services.AddScoped<StartService>();
+
+// Регулярная чистка проведенных встреч
+builder.Services.AddHostedService<PastAppointmentsCleanupService>();
 
 // 6️ Строим приложение
 var app = builder.Build();
