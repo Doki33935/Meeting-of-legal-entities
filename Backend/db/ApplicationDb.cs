@@ -1,4 +1,5 @@
 ﻿using Backend.db.Models;
+using Backend.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.db
@@ -9,5 +10,6 @@ namespace Backend.db
 
         public DbSet<Timetable> Timetable { get; set; }
         public DbSet<Staff> Staff { get; set; }
+        public DbSet<Appointment> Appointments { get; set; }
     }
 }

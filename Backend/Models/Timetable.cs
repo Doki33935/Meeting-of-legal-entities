@@ -8,13 +8,15 @@ namespace Backend.db.Models
     public class Timetable
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
+
+        public int StaffId { get; set; }
 
         [Column(TypeName = "DATETIME")]
         public DateTime Slot { get; set; }
 
-        [ForeignKey("Id")]
+        [ForeignKey("StaffId")]
         public Staff Staff { get; set; } = null!;
     }
 }
