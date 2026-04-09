@@ -55,6 +55,36 @@
   font-size: 14px;
 }
 
+.chip-button--ghost {
+  background: transparent;
+}
+
+.chip-button--selected {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.button--primary {
+  background: var(--accent-color);
+  color: var(--accent-text);
+  box-shadow: 0 12px 30px var(--accent-shadow);
+}
+
+.button--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .hero-section {
   background: var(--hero-bg);
   color: var(--hero-text);
@@ -416,6 +446,10 @@
   align-items: stretch;
 }
 
+.chips--wrap {
+  margin-bottom: 12px;
+}
+
 .chips__item {
   border: 1px solid var(--border-color);
   border-radius: 999px;
@@ -443,6 +477,25 @@
   background: var(--surface-elevated);
 }
 
+.staff-card--selectable {
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.staff-card--selectable:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-color);
+}
+
+.staff-card--selectable.is-selected {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--surface-accent);
+}
+
 .staff-card__image {
   width: 64px;
   height: 64px;
@@ -468,6 +521,53 @@
   color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.5;
+}
+
+.booking-toast {
+  position: sticky;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+.booking-toast__info {
+  display: grid;
+  gap: 4px;
+}
+
+.booking-toast__title {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.booking-toast__line {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.booking-toast__message {
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+
+.booking-toast__message.is-success {
+  color: #16a34a;
+}
+
+.booking-toast__message.is-error {
+  color: #ef4444;
+}
+
+.booking-toast__action {
+  min-width: 200px;
 }
 
 .documents-section__text {
@@ -517,5 +617,14 @@
   .staff-card__image {
     width: 100%;
     height: 180px;
+  }
+
+  .booking-toast {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .booking-toast__action {
+    width: 100%;
   }
 }
