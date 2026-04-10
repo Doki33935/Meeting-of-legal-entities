@@ -30,6 +30,13 @@ export function getAvailableStaff(request: MeetRequestDto) {
     path: '/api/meet',
     method: 'POST',
     body: JSON.stringify(request),
+  }).catch((error) => {
+    const message = error instanceof Error ? error.message : String(error)
+    if (message.includes('Нет свободных сотрудников')) {
+      return []
+    }
+
+    throw error
   })
 }
 

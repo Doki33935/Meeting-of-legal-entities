@@ -1,4 +1,21 @@
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
+const rawApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
+
+function normalizeApiUrl(url: string | undefined) {
+  if (!url) return undefined
+
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol === 'http:') {
+      parsed.protocol = 'https:'
+      return parsed.toString().replace(/\/$/, '')
+    }
+    return parsed.toString().replace(/\/$/, '')
+  } catch {
+    return url
+  }
+}
+
+const API_URL = normalizeApiUrl(rawApiUrl)
 
 interface RequestOptions extends RequestInit {
   path: string
@@ -14,6 +31,7 @@ export async function apiRequest<T>({ path, headers, ...options }: RequestOption
   try {
     const response = await fetch(`${API_URL}${path}`, {
       ...options,
+      credentials: options.credentials ?? 'include',
       headers: {
         'Content-Type': 'application/json',
         ...headers,
