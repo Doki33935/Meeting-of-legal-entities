@@ -1,11 +1,13 @@
 .page {
   min-height: 100vh;
-  max-width: 1220px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 24px 18px 40px;
+  padding: 22px 16px 40px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
+  color: #333333;
+  background: #f5f5f8;
 }
 
 .topbar {
@@ -27,9 +29,9 @@
 
 .chip-button,
 .text-button {
-  border: 1px solid var(--border-color);
-  background: var(--surface-elevated);
-  color: var(--text-primary);
+  border: 1px solid #dcdce3;
+  background: #ffffff;
+  color: #333333;
   border-radius: 999px;
   padding: 8px 12px;
   cursor: pointer;
@@ -40,8 +42,8 @@
 }
 
 .chip-button--selected {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: #428bf9;
+  box-shadow: 0 0 0 2px rgba(66, 139, 249, 0.18);
 }
 
 .button {
@@ -53,19 +55,19 @@
 }
 
 .button--primary {
-  background: var(--accent-color);
-  color: var(--accent-text);
+  background: #ffdd2d;
+  color: #333333;
 }
 
 .hero-section {
-  background: var(--hero-bg);
-  color: var(--hero-text);
-  border-radius: 22px;
-  padding: 26px;
+  background: #ffffff;
+  border: 1px solid #e0e0e7;
+  border-radius: 20px;
+  padding: 18px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
 }
 
 .hero-section__title {
@@ -73,18 +75,22 @@
   font-size: 30px;
 }
 
+.hero-section__description {
+  margin: 6px 0 0;
+  color: #666666;
+}
+
 .grid-section {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
-  gap: 16px;
+  gap: 14px;
 }
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 18px;
-  box-shadow: var(--card-shadow);
+  background: #ffffff;
+  border: 1px solid #e0e0e7;
+  border-radius: 18px;
+  padding: 16px;
 }
 
 .card__title {
@@ -98,72 +104,69 @@
 
 .card__subtitle {
   margin: 6px 0 0;
-  color: var(--text-secondary);
-}
-
-.section-head {
-  margin-bottom: 10px;
+  color: #666666;
 }
 
 .calendar__header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
 .calendar__nav {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  border: 1px solid var(--border-color);
-  background: var(--surface-elevated);
-  color: var(--text-primary);
+  border: 1px solid #dcdce3;
+  background: #ffffff;
+  color: #333333;
   cursor: pointer;
 }
 
 .calendar__title {
-  font-weight: 700;
   text-transform: capitalize;
+  font-weight: 700;
 }
 
 .calendar__weekdays,
 .calendar__grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
 }
 
 .calendar__weekday {
   text-align: center;
-  color: var(--text-secondary);
+  color: #666666;
   font-size: 13px;
 }
 
 .calendar__day {
-  height: 38px;
+  height: 42px;
   border-radius: 10px;
-  border: 1px solid var(--border-color);
-  background: var(--surface-elevated);
-  color: var(--text-primary);
+  border: 1px solid #dcdce3;
+  background: #ffffff;
+  color: #333333;
   cursor: pointer;
 }
 
 .calendar__day--out {
-  opacity: 0.45;
+  opacity: 0.55;
 }
 
 .calendar__day:disabled {
-  opacity: 0.2;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
 .calendar__day--selected {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: #428bf9;
+  box-shadow: 0 0 0 2px rgba(66, 139, 249, 0.18);
 }
 
 .slots-block {
-  margin-top: 10px;
+  margin-top: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -171,34 +174,39 @@
 
 .slots-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 8px;
 }
 
 .slot-card {
-  border: 1px solid var(--border-color);
-  background: var(--surface-elevated);
+  border: 1px solid #dcdce3;
+  background: #ffffff;
   border-radius: 14px;
   padding: 12px;
   text-align: left;
   cursor: pointer;
 }
 
+.slot-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .slot-card--selected {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: #428bf9;
+  box-shadow: 0 0 0 2px rgba(66, 139, 249, 0.18);
 }
 
 .slot-card__time {
   display: block;
-  font-weight: 700;
   margin-bottom: 4px;
+  font-weight: 700;
 }
 
 .count-badge {
   display: inline-block;
   border-radius: 8px;
-  padding: 3px 7px;
+  padding: 3px 8px;
   font-size: 12px;
 }
 
@@ -208,13 +216,13 @@
 }
 
 .count-badge--one {
-  background: rgba(245, 158, 11, 0.2);
-  color: #d97706;
+  background: rgba(255, 221, 45, 0.35);
+  color: #7a5f00;
 }
 
 .count-badge--many {
   background: rgba(34, 197, 94, 0.2);
-  color: #16a34a;
+  color: #15803d;
 }
 
 .summary-panel__content {
@@ -227,13 +235,13 @@
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  border: 1px solid var(--border-color);
+  border: 1px solid #e0e0e7;
   border-radius: 12px;
   padding: 10px 12px;
 }
 
 .info-block {
-  margin-top: 16px;
+  margin-top: 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -241,10 +249,10 @@
 
 .reason-select {
   width: 100%;
-  border: 1px solid var(--border-color);
+  border: 1px solid #dcdce3;
   border-radius: 10px;
-  background: var(--surface-elevated);
-  color: var(--text-primary);
+  background: #ffffff;
+  color: #333333;
   padding: 9px 10px;
 }
 
@@ -262,16 +270,10 @@
 }
 
 .chips__item {
-  border: 1px solid var(--border-color);
+  border: 1px solid #dcdce3;
   border-radius: 999px;
   padding: 8px 12px;
-  background: var(--surface-elevated);
-}
-
-.chip-label {
-  align-self: center;
-  color: var(--text-secondary);
-  font-size: 13px;
+  background: #ffffff;
 }
 
 .staff-grid {
@@ -284,12 +286,12 @@
 
 .staff-card {
   display: grid;
-  grid-template-columns: 80px 1fr;
+  grid-template-columns: 86px 1fr;
   gap: 10px;
   padding: 10px;
-  border: 1px solid var(--border-color);
+  border: 1px solid #e0e0e7;
   border-radius: 14px;
-  background: var(--surface-elevated);
+  background: #ffffff;
 }
 
 .staff-card--selectable {
@@ -297,17 +299,17 @@
 }
 
 .staff-card--selectable.is-selected {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: #428bf9;
+  box-shadow: 0 0 0 2px rgba(66, 139, 249, 0.18);
 }
 
 .staff-card__image {
-  width: 80px;
-  height: 100px;
+  width: 86px;
+  height: 110px;
   border-radius: 10px;
   object-fit: contain;
   object-position: center top;
-  background: rgba(148, 163, 184, 0.12);
+  background: #f5f5f8;
 }
 
 .staff-card__name {
@@ -318,7 +320,7 @@
 .staff-card__meta,
 .staff-card__description {
   margin: 0;
-  color: var(--text-secondary);
+  color: #666666;
   font-size: 13px;
 }
 
@@ -326,13 +328,13 @@
   position: sticky;
   bottom: 10px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--surface-elevated);
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #dcdce3;
   border-radius: 14px;
   padding: 12px;
+  background: #ffffff;
 }
 
 .booking-toast__title {
@@ -342,11 +344,11 @@
 
 .booking-toast__line {
   margin: 0;
-  color: var(--text-secondary);
+  color: #666666;
 }
 
 .booking-toast__message.is-success {
-  color: #16a34a;
+  color: #15803d;
 }
 
 .booking-toast__message.is-error {
@@ -355,28 +357,28 @@
 
 .appointments-list {
   list-style: none;
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   padding: 0;
   display: grid;
   gap: 10px;
 }
 
 .appointment-card {
-  border: 1px solid var(--border-color);
+  border: 1px solid #dcdce3;
   border-radius: 12px;
   padding: 12px;
-  background: var(--surface-elevated);
+  background: #ffffff;
 }
 
 .appointment-line {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   margin: 2px 0;
 }
 
 .state-text {
-  color: var(--text-secondary);
+  color: #666666;
 }
 
 .state-text--error {
@@ -394,19 +396,19 @@
 }
 
 @media (max-width: 900px) {
-  .page {
-    padding: 16px 12px 28px;
-  }
-
   .hero-section {
     flex-direction: column;
     align-items: flex-start;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
+  .page {
+    padding: 14px 10px 28px;
+  }
+
   .hero-section__title {
-    font-size: 24px;
+    font-size: 25px;
   }
 
   .staff-card {
@@ -415,7 +417,7 @@
 
   .staff-card__image {
     width: 100%;
-    height: 180px;
+    height: 190px;
   }
 
   .booking-toast {

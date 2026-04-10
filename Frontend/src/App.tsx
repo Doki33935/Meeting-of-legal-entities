@@ -6,90 +6,87 @@ import type { AppointmentDto, StaffDto, StartDaySlot, StartSlotDto } from './typ
 import './App.css'
 
 type Locale = 'ru' | 'en'
-type TimeFilter = 'all' | 'morning' | 'day' | 'evening' | '08-10' | '10-12' | '12-14' | '14-18'
 
 const MOSCOW_TZ = 'Europe/Moscow'
 const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
 const defaultLocale = (import.meta.env.VITE_DEFAULT_LANGUAGE === 'en' ? 'en' : 'ru') as Locale
 
-const i18n = {
+const text = {
   ru: {
     brand: 'Встречи для юрлиц',
     title: 'Назначение встречи',
+    subtitle: 'Выберите дату, время, цель и специалиста. Отображаем время по Москве (UTC+3).',
     refresh: 'Обновить слоты',
-    loading: 'Загружаем слоты...',
-    loadError: 'Ошибка загрузки данных.',
+    loading: 'Загружаем доступные даты...',
+    loadError: 'Не удалось загрузить данные.',
     chooseDate: 'Выберите дату',
     chooseTime: 'Выберите время',
-    noSlots: 'Слотов нет',
+    noSlots: 'Нет доступных слотов',
+    noSlotsForDate: 'На эту дату свободных слотов нет.',
     reason: 'Цель встречи',
     docs: 'Документы',
+    docsHint: 'Документы обновляются автоматически по выбранной цели встречи.',
     specialists: 'Специалисты',
     noStaff: 'На это время нет свободных специалистов.',
     loadingStaff: 'Загружаем специалистов...',
     age: 'Возраст',
-    allSpecializations: 'Все специализации',
+    allSpecs: 'Все специализации',
     summary: 'Сводка',
     date: 'Дата',
     time: 'Время',
     free: 'Свободно специалистов',
     selectedSpecialist: 'Выбранный специалист',
     place: 'Место встречи',
-    placeText: 'Адрес подтверждается после бронирования',
+    placeValue: 'Адрес уточняется после подтверждения встречи',
     book: 'Назначить встречу',
     booking: 'Назначаем...',
-    booked: 'Встреча назначена',
     bookError: 'Не удалось назначить встречу',
+    booked: 'Встреча назначена',
     appointments: 'У вас назначены встречи',
-    appointmentsEmpty: 'Пока нет встреч',
+    appointmentsEmpty: 'Пока нет назначенных встреч.',
     when: 'Когда',
     where: 'Где',
     why: 'Причина',
     whatTake: 'Что взять',
     toDetails: 'Перейти к выбору специалиста',
-    any: 'Любое',
-    morning: 'Утро',
-    day: 'День',
-    evening: 'Вечер',
   },
   en: {
     brand: 'Business Meetings',
     title: 'Meeting booking',
+    subtitle: 'Pick date, time, purpose and specialist. We show Moscow timezone (UTC+3).',
     refresh: 'Refresh slots',
-    loading: 'Loading slots...',
+    loading: 'Loading available dates...',
     loadError: 'Failed to load data.',
     chooseDate: 'Choose date',
     chooseTime: 'Choose time',
-    noSlots: 'No slots',
+    noSlots: 'No slots available',
+    noSlotsForDate: 'No free slots for this date.',
     reason: 'Meeting purpose',
     docs: 'Documents',
+    docsHint: 'Documents update automatically by selected meeting purpose.',
     specialists: 'Specialists',
-    noStaff: 'No available specialists for selected time.',
+    noStaff: 'No specialists available for selected time.',
     loadingStaff: 'Loading specialists...',
     age: 'Age',
-    allSpecializations: 'All specializations',
+    allSpecs: 'All specializations',
     summary: 'Summary',
     date: 'Date',
     time: 'Time',
     free: 'Free specialists',
     selectedSpecialist: 'Selected specialist',
     place: 'Meeting place',
-    placeText: 'Address is confirmed after booking',
+    placeValue: 'Address is confirmed after meeting approval',
     book: 'Book meeting',
     booking: 'Booking...',
+    bookError: 'Failed to book',
     booked: 'Meeting booked',
-    bookError: 'Booking failed',
     appointments: 'Your booked meetings',
-    appointmentsEmpty: 'No meetings yet',
+    appointmentsEmpty: 'No booked meetings yet.',
     when: 'When',
     where: 'Where',
     why: 'Reason',
     whatTake: 'What to take',
-    toDetails: 'Go to specialist selection',
-    any: 'Any',
-    morning: 'Morning',
-    day: 'Day',
-    evening: 'Evening',
+    toDetails: 'Go to specialist section',
   },
 } as const
 
@@ -99,12 +96,12 @@ const reasonOptions = {
 } as const
 
 const docsByReason: Record<string, string[]> = {
-  'Открытие расчётного счёта': ['Паспорт', 'ИНН/ОГРН', 'Учредительные документы'],
+  'Открытие расчётного счёта': ['Паспорт', 'ИНН / ОГРН', 'Учредительные документы'],
   'Подключение эквайринга': ['Паспорт', 'Реквизиты счёта', 'Данные по торговой точке'],
-  'Изменение данных компании': ['Паспорт', 'Документы-основания', 'Актуальная карточка организации'],
+  'Изменение данных компании': ['Паспорт', 'Документы-основания', 'Новая карточка организации'],
   'Консультация по тарифу': ['Паспорт', 'Текущий договор', 'Список операций'],
   'Open account': ['Passport', 'Tax IDs', 'Incorporation documents'],
-  'Enable acquiring': ['Passport', 'Account details', 'Merchant data'],
+  'Enable acquiring': ['Passport', 'Account details', 'Merchant location data'],
   'Company data changes': ['Passport', 'Change documents', 'Updated company card'],
   'Tariff consultation': ['Passport', 'Current agreement', 'Operations list'],
 }
@@ -122,7 +119,7 @@ const staffRuNames: Record<string, string> = {
   'Julia Roberts': 'Джулия Робертс',
 }
 
-const specializations: Record<string, { ru: string; en: string }> = {
+const staffSpec: Record<string, { ru: string; en: string }> = {
   'Alice Johnson': { ru: 'Корпоративное право', en: 'Corporate law' },
   'Bob Smith': { ru: 'Налоги и бухгалтерия', en: 'Tax and accounting' },
   'Charlie Brown': { ru: 'Юридическая поддержка', en: 'Legal support' },
@@ -135,141 +132,528 @@ const specializations: Record<string, { ru: string; en: string }> = {
   'Julia Roberts': { ru: 'Бизнес-консалтинг', en: 'Business consulting' },
 }
 
-const parseDate = (value: string) => new Date(value.endsWith('Z') || /[+-]\d\d:\d\d$/.test(value) ? value : `${value}Z`)
-const toYmd = (d: string | Date) => new Intl.DateTimeFormat('en-CA', { timeZone: MOSCOW_TZ }).format(typeof d === 'string' ? parseDate(d) : d)
-const fDay = (d: string, l: Locale) => new Intl.DateTimeFormat(l === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'long', day: '2-digit', month: 'long', timeZone: MOSCOW_TZ }).format(parseDate(d))
-const fTime = (d: string, l: Locale) => new Intl.DateTimeFormat(l === 'ru' ? 'ru-RU' : 'en-US', { hour: '2-digit', minute: '2-digit', timeZone: MOSCOW_TZ }).format(parseDate(d))
-const monthTitle = (d: Date, l: Locale) => new Intl.DateTimeFormat(l === 'ru' ? 'ru-RU' : 'en-US', { month: 'long', year: 'numeric', timeZone: MOSCOW_TZ }).format(d)
-const getImageUrl = (path: string) => (/^https?:\/\//i.test(path) ? path : `${API_URL ?? ''}${path}`)
+function parseSlot(slot: string) {
+  if (slot.endsWith('Z') || /[+-]\d\d:\d\d$/.test(slot)) return new Date(slot)
+  return new Date(`${slot}Z`)
+}
 
-function slotClass(count: number) {
+function toMoscowYmd(value: string | Date) {
+  const date = typeof value === 'string' ? parseSlot(value) : value
+  return new Intl.DateTimeFormat('en-CA', { timeZone: MOSCOW_TZ }).format(date)
+}
+
+function formatDay(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    timeZone: MOSCOW_TZ,
+  }).format(parseSlot(value))
+}
+
+function formatTime(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: MOSCOW_TZ,
+  }).format(parseSlot(value))
+}
+
+function monthLabel(date: Date, locale: Locale) {
+  return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: MOSCOW_TZ,
+  }).format(date)
+}
+
+function isFutureSlot(slot: string) {
+  return parseSlot(slot).getTime() > Date.now()
+}
+
+function getImageUrl(path: string) {
+  if (/^https?:\/\//i.test(path)) return path
+  return `${API_URL ?? ''}${path}`
+}
+
+function fixBrokenStaffImage(path: string) {
+  const p = path.toLowerCase()
+  if (p.endsWith('/ethan.jpg')) return `${API_URL}/images/staff/ethan.png`
+  if (p.endsWith('/hannah.jpg')) return `${API_URL}/images/staff/hannah.png`
+  return ''
+}
+
+function avatarFallback(name: string) {
+  const initials = name
+    .split(' ')
+    .slice(0, 2)
+    .map((x) => x[0]?.toUpperCase() ?? '')
+    .join('')
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><rect width='100%' height='100%' fill='#F5F5F8'/><text x='50%' y='54%' text-anchor='middle' font-size='42' font-family='Arial,sans-serif' fill='#333333'>${initials}</text></svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
+
+function calendarDays(anchor: Date) {
+  const first = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), 1))
+  const shift = (first.getUTCDay() + 6) % 7
+  const start = new Date(first)
+  start.setUTCDate(first.getUTCDate() - shift)
+  return Array.from({ length: 42 }, (_, i) => {
+    const d = new Date(start)
+    d.setUTCDate(start.getUTCDate() + i)
+    return d
+  })
+}
+
+function groupSlotsByDate(slots: StartSlotDto[], locale: Locale): StartDaySlot[] {
+  const grouped = new Map<string, StartDaySlot>()
+  slots.forEach((slot) => {
+    if (!isFutureSlot(slot.slot)) return
+    const key = toMoscowYmd(slot.slot)
+    const item = { slot: slot.slot, time: formatTime(slot.slot, locale), count: slot.count }
+    const current = grouped.get(key)
+    if (!current) {
+      grouped.set(key, { date: key, dayLabel: formatDay(slot.slot, locale), slots: [item] })
+      return
+    }
+    current.slots.push(item)
+  })
+  return Array.from(grouped.values())
+}
+
+function countClass(count: number) {
   if (count <= 0) return 'count-badge count-badge--zero'
   if (count === 1) return 'count-badge count-badge--one'
   return 'count-badge count-badge--many'
 }
 
-function AppPage() {
+function localizeStaff(list: StaffDto[], locale: Locale): StaffDto[] {
+  return list.map((staff) => {
+    const nameEn = staff.name
+    return {
+      ...staff,
+      name: locale === 'ru' ? (staffRuNames[nameEn] ?? nameEn) : nameEn,
+      specialization: staffSpec[nameEn] ? staffSpec[nameEn][locale] : staff.specialization,
+    }
+  })
+}
+
+function MeetingPage() {
   const { theme, toggleTheme } = useTheme()
   const [locale, setLocale] = useState<Locale>(defaultLocale)
+  const [month, setMonth] = useState(() => new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)))
   const [slots, setSlots] = useState<StartSlotDto[]>([])
   const [appointments, setAppointments] = useState<AppointmentDto[]>([])
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<StartSlotDto | null>(null)
   const [staff, setStaff] = useState<StaffDto[]>([])
   const [selectedStaff, setSelectedStaff] = useState<StaffDto | null>(null)
+  const [specFilter, setSpecFilter] = useState('all')
   const [reason, setReason] = useState<string>(reasonOptions[defaultLocale][0])
-  const [spec, setSpec] = useState('all')
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
+  const [slotActualCount, setSlotActualCount] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
-  const [staffLoading, setStaffLoading] = useState(false)
+  const [loadingStaff, setLoadingStaff] = useState(false)
   const [error, setError] = useState('')
-  const [bookStatus, setBookStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [bookMessage, setBookMessage] = useState('')
-  const [month, setMonth] = useState(() => new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)))
+  const [staffError, setStaffError] = useState('')
+  const [bookingStatus, setBookingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [bookingMessage, setBookingMessage] = useState('')
+
   const detailsRef = useRef<HTMLElement | null>(null)
   const appointmentsRef = useRef<HTMLElement | null>(null)
-  const t = i18n[locale]
+  const t = text[locale]
 
-  useEffect(() => { document.documentElement.dataset.theme = theme }, [theme])
-  useEffect(() => { setReason(reasonOptions[locale][0]) }, [locale])
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+  }, [theme])
 
-  const days = useMemo(() => {
-    const first = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 1))
-    const shift = (first.getUTCDay() + 6) % 7
-    const start = new Date(first)
-    start.setUTCDate(first.getUTCDate() - shift)
-    return Array.from({ length: 42 }, (_, i) => { const d = new Date(start); d.setUTCDate(start.getUTCDate() + i); return d })
-  }, [month])
+  useEffect(() => {
+    setReason(reasonOptions[locale][0])
+  }, [locale])
 
-  const byDate = useMemo(() => {
-    const map = new Map<string, StartDaySlot>()
-    slots.filter((s) => parseDate(s.slot).getTime() > Date.now()).forEach((s) => {
-      const key = toYmd(s.slot)
-      const cur = map.get(key)
-      const item = { slot: s.slot, count: s.count, time: fTime(s.slot, locale) }
-      if (!cur) map.set(key, { date: key, dayLabel: fDay(s.slot, locale), slots: [item] })
-      else cur.slots.push(item)
-    })
-    return Array.from(map.values())
-  }, [slots, locale])
-
-  const day = useMemo(() => byDate.find((d) => d.date === selectedDate) ?? null, [byDate, selectedDate])
-  const daySlots = useMemo(() => {
-    const src = day?.slots ?? []
-    const byTime = (s: StartDaySlot['slots'][number]) => {
-      const h = parseInt(s.time.slice(0, 2), 10)
-      if (timeFilter === 'all') return true
-      if (timeFilter === 'morning') return h < 12
-      if (timeFilter === 'day') return h >= 12 && h < 17
-      if (timeFilter === 'evening') return h >= 17
-      const [a, b] = timeFilter.split('-').map(Number)
-      return h >= a && h < b
-    }
-    return src.filter(byTime)
-  }, [day?.slots, timeFilter])
-
-  const staffLocalized = useMemo(() => staff.map((s) => ({ ...s, name: locale === 'ru' ? (staffRuNames[s.name] ?? s.name) : s.name, specialization: specializations[s.name] ? specializations[s.name][locale] : s.specialization })), [staff, locale])
-  const specOptions = useMemo(() => ['all', ...new Set(staffLocalized.map((s) => s.specialization ?? '').filter(Boolean))], [staffLocalized])
-  const staffFiltered = useMemo(() => (spec === 'all' ? staffLocalized : staffLocalized.filter((s) => s.specialization === spec)), [staffLocalized, spec])
+  const grouped = useMemo(() => groupSlotsByDate(slots, locale), [slots, locale])
+  const day = useMemo(() => grouped.find((d) => d.date === selectedDate) ?? null, [grouped, selectedDate])
+  const availableDateSet = useMemo(() => new Set(grouped.map((d) => d.date)), [grouped])
   const docs = docsByReason[reason] ?? docsByReason[reasonOptions[locale][0]]
+  const localizedStaff = useMemo(() => localizeStaff(staff, locale), [staff, locale])
+  const specOptions = useMemo(
+    () => ['all', ...new Set(localizedStaff.map((s) => s.specialization ?? '').filter(Boolean))],
+    [localizedStaff],
+  )
+  const filteredStaff = useMemo(
+    () => (specFilter === 'all' ? localizedStaff : localizedStaff.filter((s) => s.specialization === specFilter)),
+    [localizedStaff, specFilter],
+  )
 
   const loadAll = async () => {
-    setLoading(true); setError('')
-    try { const data = await getMeetingData(); setSlots(data.timetable); setAppointments(data.appointments) }
-    catch { setError(t.loadError) } finally { setLoading(false) }
-  }
-
-  const loadStaff = async (slot: string) => {
-    setStaffLoading(true)
-    const data = await getAvailableStaff({ slot })
-    setStaff(data)
-    setSelectedStaff(data[0] ?? null)
-    setStaffLoading(false)
-  }
-
-  useEffect(() => { void loadAll() }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (selectedSlot) void loadStaff(selectedSlot.slot) }, [locale]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const onBook = async () => {
-    if (!selectedSlot || !selectedStaff) return
-    setBookStatus('loading'); setBookMessage('')
+    setLoading(true)
+    setError('')
     try {
-      const res = await bookMeeting({ staffId: selectedStaff.id, appointmentTime: selectedSlot.slot, reason })
-      setBookStatus('success'); setBookMessage(res.message ?? t.booked)
-      setAppointments((p) => [...p, { staffImage: selectedStaff.image, staffName: selectedStaff.name, reason, appointmentTime: selectedSlot.slot }])
+      const data = await getMeetingData()
+      setSlots(data.timetable)
+      setAppointments(data.appointments)
+    } catch {
+      setError(t.loadError)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadStaffForSlot = async (slot: string) => {
+    setLoadingStaff(true)
+    setStaffError('')
+    setSelectedStaff(null)
+    setBookingStatus('idle')
+    setBookingMessage('')
+    try {
+      const data = await getAvailableStaff({ slot })
+      setStaff(data)
+      setSlotActualCount((prev) => ({ ...prev, [slot]: data.length }))
+      setSelectedStaff(data[0] ?? null)
+    } catch {
+      setStaffError(t.loadError)
+    } finally {
+      setLoadingStaff(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadAll()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!selectedSlot) return
+    void loadStaffForSlot(selectedSlot.slot)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale])
+
+  const selectSlot = async (slot: string, count: number) => {
+    const effective = slotActualCount[slot] ?? count
+    if (effective <= 0) return
+    setSelectedSlot({ slot, count: effective })
+    await loadStaffForSlot(slot)
+    detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const handleBook = async () => {
+    if (!selectedSlot || !selectedStaff) return
+    setBookingStatus('loading')
+    setBookingMessage('')
+    try {
+      const response = await bookMeeting({
+        staffId: selectedStaff.id,
+        appointmentTime: selectedSlot.slot,
+        reason,
+      })
+      setBookingStatus('success')
+      setBookingMessage(response.message ?? t.booked)
+      setAppointments((prev) => [
+        ...prev,
+        {
+          staffImage: selectedStaff.image,
+          staffName: selectedStaff.name,
+          reason,
+          appointmentTime: selectedSlot.slot,
+        },
+      ])
       appointmentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       await loadAll()
-    } catch { setBookStatus('error'); setBookMessage(t.bookError) }
+    } catch {
+      setBookingStatus('error')
+      setBookingMessage(t.bookError)
+    }
   }
+
+  const weekDays = locale === 'ru' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 
   return (
     <main className="page">
-      <header className="topbar"><p className="topbar__brand">{t.brand}</p><div className="topbar__controls"><button className="chip-button" onClick={toggleTheme}>{theme === 'light' ? 'Dark' : 'Light'}</button><button className="chip-button" onClick={() => setLocale((v) => (v === 'ru' ? 'en' : 'ru'))}>{locale === 'ru' ? 'EN' : 'RU'}</button></div></header>
-      <section className="hero-section"><h1 className="hero-section__title">{t.title}</h1><button className="button button--primary" onClick={() => void loadAll()}>{t.refresh}</button></section>
+      <header className="topbar">
+        <p className="topbar__brand">{t.brand}</p>
+        <div className="topbar__controls">
+          <button type="button" className="chip-button" onClick={toggleTheme}>
+            {theme === 'light' ? 'Dark' : 'Light'}
+          </button>
+          <button type="button" className="chip-button" onClick={() => setLocale((cur) => (cur === 'ru' ? 'en' : 'ru'))}>
+            {locale === 'ru' ? 'EN' : 'RU'}
+          </button>
+        </div>
+      </header>
+
+      <section className="hero-section">
+        <div>
+          <h1 className="hero-section__title">{t.title}</h1>
+          <p className="hero-section__description">{t.subtitle}</p>
+        </div>
+        <button type="button" className="button button--primary" onClick={() => void loadAll()}>
+          {t.refresh}
+        </button>
+      </section>
+
       <section className="grid-section">
         <article className="card">
-          <div className="calendar__header"><button className="calendar__nav" onClick={() => setMonth((m) => new Date(Date.UTC(m.getUTCFullYear(), m.getUTCMonth() - 1, 1)))}>‹</button><div className="calendar__title">{monthTitle(month, locale)}</div><button className="calendar__nav" onClick={() => setMonth((m) => new Date(Date.UTC(m.getUTCFullYear(), m.getUTCMonth() + 1, 1)))}>›</button></div>
-          <div className="calendar__weekdays">{(locale === 'ru' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']).map((d) => <div key={d} className="calendar__weekday">{d}</div>)}</div>
-          <div className="calendar__grid">{days.map((d) => { const ymd = toYmd(d); const has = byDate.some((x) => x.date === ymd); const past = ymd < toYmd(new Date()); return <button key={ymd} className={`calendar__day ${d.getUTCMonth() === month.getUTCMonth() ? '' : 'calendar__day--out'} ${selectedDate === ymd ? 'calendar__day--selected' : ''}`} disabled={!has || past} onClick={() => { setSelectedDate(ymd); setSelectedSlot(null) }}>{d.getUTCDate()}</button> })}</div>
+          <div className="calendar__header">
+            <button type="button" className="calendar__nav" onClick={() => setMonth((m) => new Date(Date.UTC(m.getUTCFullYear(), m.getUTCMonth() - 1, 1)))}>
+              ‹
+            </button>
+            <div className="calendar__title">{monthLabel(month, locale)}</div>
+            <button type="button" className="calendar__nav" onClick={() => setMonth((m) => new Date(Date.UTC(m.getUTCFullYear(), m.getUTCMonth() + 1, 1)))}>
+              ›
+            </button>
+          </div>
+
+          <div className="calendar__weekdays">
+            {weekDays.map((d) => (
+              <div key={d} className="calendar__weekday">
+                {d}
+              </div>
+            ))}
+          </div>
+
+          <div className="calendar__grid">
+            {calendarDays(month).map((d) => {
+              const ymd = toMoscowYmd(d)
+              const isPast = ymd < toMoscowYmd(new Date())
+              const isInMonth = d.getUTCMonth() === month.getUTCMonth()
+              const isSelected = selectedDate === ymd
+              const has = availableDateSet.has(ymd)
+              return (
+                <button
+                  key={ymd}
+                  type="button"
+                  className={`calendar__day ${isInMonth ? '' : 'calendar__day--out'} ${isSelected ? 'calendar__day--selected' : ''}`}
+                  disabled={isPast}
+                  onClick={() => {
+                    setSelectedDate(ymd)
+                    setSelectedSlot(null)
+                    setStaff([])
+                    if (!has) setStaffError('')
+                  }}
+                >
+                  {d.getUTCDate()}
+                </button>
+              )
+            })}
+          </div>
+
           {loading && <p className="state-text">{t.loading}</p>}
           {error && <p className="state-text state-text--error">{error}</p>}
-          {selectedDate && <div className="slots-block"><div className="chips chips--wrap">{([['all', t.any], ['morning', t.morning], ['day', t.day], ['evening', t.evening], ['08-10', '08-10'], ['10-12', '10-12'], ['12-14', '12-14'], ['14-18', '14-18']] as [TimeFilter, string][]).map(([v, label]) => <button key={v} className={`chip-button chip-button--ghost ${timeFilter === v ? 'chip-button--selected' : ''}`} onClick={() => setTimeFilter(v)}>{label}</button>)}</div><div className="slots-grid">{daySlots.map((s) => <button key={s.slot} className={`slot-card ${selectedSlot?.slot === s.slot ? 'slot-card--selected' : ''}`} onClick={() => { setSelectedSlot({ slot: s.slot, count: s.count }); void loadStaff(s.slot); detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}><span className="slot-card__time">{s.time}</span><span className={slotClass(s.count)}>{s.count} {t.free}</span></button>)}</div></div>}
+
+          {selectedDate && (
+            <div className="slots-block">
+              <h3 className="card__title card__title--small">{day?.dayLabel ?? t.chooseDate}</h3>
+              {!day || day.slots.length === 0 ? (
+                <p className="state-text">{t.noSlotsForDate}</p>
+              ) : (
+                <>
+                  <p className="card__subtitle">{t.chooseTime}</p>
+                  <div className="slots-grid">
+                    {day.slots.map((s) => {
+                      const effective = slotActualCount[s.slot] ?? s.count
+                      return (
+                        <button
+                          key={s.slot}
+                          type="button"
+                          className={`slot-card ${selectedSlot?.slot === s.slot ? 'slot-card--selected' : ''}`}
+                          disabled={effective <= 0}
+                          onClick={() => void selectSlot(s.slot, effective)}
+                        >
+                          <span className="slot-card__time">{s.time}</span>
+                          <span className={countClass(effective)}>
+                            {effective} {t.free}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {selectedSlot && (
+                    <button type="button" className="text-button scroll-cta" onClick={() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                      {t.toDetails}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </article>
+
         <article className="card" ref={detailsRef}>
           <h2 className="card__title">{t.summary}</h2>
-          {selectedSlot ? <div className="summary-panel__content"><div className="summary-row"><span>{t.date}</span><strong>{fDay(selectedSlot.slot, locale)}</strong></div><div className="summary-row"><span>{t.time}</span><strong>{fTime(selectedSlot.slot, locale)}</strong></div><div className="summary-row"><span>{t.free}</span><strong>{selectedSlot.count}</strong></div>{selectedStaff && <div className="summary-row"><span>{t.selectedSpecialist}</span><strong>{selectedStaff.name}</strong></div>}</div> : <p className="state-text">{t.chooseDate}</p>}
-          <div className="info-block"><h3 className="card__title card__title--small">{t.reason}</h3><select className="reason-select" value={reason} onChange={(e) => setReason(e.target.value)}>{reasonOptions[locale].map((r) => <option key={r} value={r}>{r}</option>)}</select></div>
-          <div className="info-block"><h3 className="card__title card__title--small">{t.docs}</h3><ul className="chips chips--stacked">{docs.map((d) => <li key={d} className="chips__item">{d}</li>)}</ul></div>
-          <div className="info-block"><h3 className="card__title card__title--small">{t.specialists}</h3>{staffLoading ? <p className="state-text">{t.loadingStaff}</p> : staffFiltered.length === 0 ? <p className="state-text">{t.noStaff}</p> : <><div className="chips chips--wrap"><button className={`chip-button chip-button--ghost ${spec === 'all' ? 'chip-button--selected' : ''}`} onClick={() => setSpec('all')}>{t.allSpecializations}</button>{specOptions.filter((x) => x !== 'all').map((x) => <button key={x} className={`chip-button chip-button--ghost ${spec === x ? 'chip-button--selected' : ''}`} onClick={() => setSpec(x)}>{x}</button>)}</div><ul className="staff-grid">{staffFiltered.map((s) => <li key={s.id} className={`staff-card staff-card--selectable ${selectedStaff?.id === s.id ? 'is-selected' : ''}`} onClick={() => setSelectedStaff(s)}><img className="staff-card__image" src={`${getImageUrl(s.image)}`} alt={s.name} onError={(e) => { const p = s.image.toLowerCase(); if (!e.currentTarget.dataset.alt && p.endsWith('/ethan.jpg')) { e.currentTarget.dataset.alt = '1'; e.currentTarget.src = `${API_URL}/images/staff/ethan.png`; return } e.currentTarget.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' }} /><div className="staff-card__body"><strong className="staff-card__name">{s.name}</strong><p className="staff-card__meta">{t.age}: {s.age}</p><p className="staff-card__meta">{s.specialization}</p></div></li>)}</ul></>}</div>
-          <div className="info-block"><h3 className="card__title card__title--small">{t.place}</h3><p className="state-text">{t.placeText}</p></div>
+          {selectedSlot ? (
+            <div className="summary-panel__content">
+              <div className="summary-row">
+                <span>{t.date}</span>
+                <strong>{formatDay(selectedSlot.slot, locale)}</strong>
+              </div>
+              <div className="summary-row">
+                <span>{t.time}</span>
+                <strong>{formatTime(selectedSlot.slot, locale)}</strong>
+              </div>
+              <div className="summary-row">
+                <span>{t.free}</span>
+                <strong>{selectedSlot.count}</strong>
+              </div>
+              {selectedStaff && (
+                <div className="summary-row">
+                  <span>{t.selectedSpecialist}</span>
+                  <strong>{selectedStaff.name}</strong>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="state-text">{t.chooseDate}</p>
+          )}
+
+          <div className="info-block">
+            <h3 className="card__title card__title--small">{t.reason}</h3>
+            <select className="reason-select" value={reason} onChange={(e) => setReason(e.target.value)}>
+              {reasonOptions[locale].map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="info-block">
+            <h3 className="card__title card__title--small">{t.docs}</h3>
+            <p className="documents-section__text">{t.docsHint}</p>
+            <ul className="chips chips--stacked">
+              {docs.map((d) => (
+                <li key={d} className="chips__item">
+                  {d}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="info-block">
+            <h3 className="card__title card__title--small">{t.specialists}</h3>
+            {loadingStaff ? (
+              <p className="state-text">{t.loadingStaff}</p>
+            ) : staffError ? (
+              <p className="state-text state-text--error">{staffError}</p>
+            ) : filteredStaff.length === 0 ? (
+              <p className="state-text">{t.noStaff}</p>
+            ) : (
+              <>
+                <div className="chips chips--wrap">
+                  <button type="button" className={`chip-button chip-button--ghost ${specFilter === 'all' ? 'chip-button--selected' : ''}`} onClick={() => setSpecFilter('all')}>
+                    {t.allSpecs}
+                  </button>
+                  {specOptions
+                    .filter((x) => x !== 'all')
+                    .map((x) => (
+                      <button key={x} type="button" className={`chip-button chip-button--ghost ${specFilter === x ? 'chip-button--selected' : ''}`} onClick={() => setSpecFilter(x)}>
+                        {x}
+                      </button>
+                    ))}
+                </div>
+                <ul className="staff-grid">
+                  {filteredStaff.map((s) => (
+                    <li key={`${s.id}-${s.name}`} className={`staff-card staff-card--selectable ${selectedStaff?.id === s.id ? 'is-selected' : ''}`} onClick={() => setSelectedStaff(s)}>
+                      <img
+                        className="staff-card__image"
+                        src={getImageUrl(s.image)}
+                        alt={s.name}
+                        onError={(e) => {
+                          const fallback = fixBrokenStaffImage(s.image)
+                          if (fallback && e.currentTarget.dataset.retry !== '1') {
+                            e.currentTarget.dataset.retry = '1'
+                            e.currentTarget.src = fallback
+                            return
+                          }
+                          e.currentTarget.src = avatarFallback(s.name)
+                        }}
+                      />
+                      <div className="staff-card__body">
+                        <strong className="staff-card__name">{s.name}</strong>
+                        <p className="staff-card__meta">
+                          {t.age}: {s.age}
+                        </p>
+                        <p className="staff-card__meta">{s.specialization}</p>
+                        <p className="staff-card__description">{s.description}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+
+          <div className="info-block">
+            <h3 className="card__title card__title--small">{t.place}</h3>
+            <p className="state-text">{t.placeValue}</p>
+          </div>
         </article>
       </section>
-      {selectedSlot && selectedStaff && <section className="booking-toast"><div className="booking-toast__info"><p className="booking-toast__title">{t.book}</p><p className="booking-toast__line">{fDay(selectedSlot.slot, locale)} • {fTime(selectedSlot.slot, locale)}</p><p className="booking-toast__line">{selectedStaff.name} • {reason}</p>{bookMessage && <p className={`booking-toast__message ${bookStatus === 'error' ? 'is-error' : 'is-success'}`}>{bookMessage}</p>}</div><button className="button button--primary booking-toast__action" disabled={bookStatus === 'loading'} onClick={() => void onBook()}>{bookStatus === 'loading' ? t.booking : t.book}</button></section>}
-      <section className="card appointments" ref={appointmentsRef}><h2 className="card__title">{t.appointments}</h2>{appointments.length === 0 ? <p className="state-text">{t.appointmentsEmpty}</p> : <ul className="appointments-list">{appointments.filter((a) => parseDate(a.appointmentTime).getTime() > Date.now()).sort((a, b) => parseDate(a.appointmentTime).getTime() - parseDate(b.appointmentTime).getTime()).map((a, i) => <li key={`${a.staffName}-${i}`} className="appointment-card"><div className="appointment-line"><span>{t.when}:</span><strong>{fDay(a.appointmentTime, locale)} • {fTime(a.appointmentTime, locale)}</strong></div><div className="appointment-line"><span>{t.where}:</span><strong>{t.placeText}</strong></div><div className="appointment-line"><span>{t.why}:</span><strong>{a.reason}</strong></div><div className="appointment-line"><span>{t.whatTake}:</span><strong>{(docsByReason[a.reason] ?? docsByReason[reasonOptions[locale][0]]).join(', ')}</strong></div></li>)}</ul>}</section>
+
+      {selectedSlot && selectedStaff && (
+        <section className="booking-toast">
+          <div className="booking-toast__info">
+            <p className="booking-toast__title">{t.book}</p>
+            <p className="booking-toast__line">
+              {formatDay(selectedSlot.slot, locale)} • {formatTime(selectedSlot.slot, locale)}
+            </p>
+            <p className="booking-toast__line">
+              {selectedStaff.name} • {reason}
+            </p>
+            {bookingMessage && <p className={`booking-toast__message ${bookingStatus === 'error' ? 'is-error' : 'is-success'}`}>{bookingMessage}</p>}
+          </div>
+          <button type="button" className="button button--primary booking-toast__action" disabled={bookingStatus === 'loading'} onClick={() => void handleBook()}>
+            {bookingStatus === 'loading' ? t.booking : t.book}
+          </button>
+        </section>
+      )}
+
+      <section className="card appointments" ref={appointmentsRef}>
+        <h2 className="card__title">{t.appointments}</h2>
+        {appointments.filter((a) => isFutureSlot(a.appointmentTime)).length === 0 ? (
+          <p className="state-text">{t.appointmentsEmpty}</p>
+        ) : (
+          <ul className="appointments-list">
+            {appointments
+              .filter((a) => isFutureSlot(a.appointmentTime))
+              .sort((a, b) => parseSlot(a.appointmentTime).getTime() - parseSlot(b.appointmentTime).getTime())
+              .map((a, idx) => {
+                const appDocs = docsByReason[a.reason] ?? docsByReason[reasonOptions[locale][0]]
+                return (
+                  <li key={`${a.appointmentTime}-${idx}`} className="appointment-card">
+                    <div className="appointment-line">
+                      <span>{t.when}:</span>
+                      <strong>
+                        {formatDay(a.appointmentTime, locale)} • {formatTime(a.appointmentTime, locale)}
+                      </strong>
+                    </div>
+                    <div className="appointment-line">
+                      <span>{t.where}:</span>
+                      <strong>{t.placeValue}</strong>
+                    </div>
+                    <div className="appointment-line">
+                      <span>{t.why}:</span>
+                      <strong>{a.reason}</strong>
+                    </div>
+                    <div className="appointment-line">
+                      <span>{t.whatTake}:</span>
+                      <strong>{appDocs.join(', ')}</strong>
+                    </div>
+                  </li>
+                )
+              })}
+          </ul>
+        )}
+      </section>
     </main>
   )
 }
 
-function App() { return <Routes><Route path="/" element={<Navigate to="/meeting-booking" replace />} /><Route path="/meeting-booking" element={<AppPage />} /></Routes> }
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/meeting-booking" replace />} />
+      <Route path="/meeting-booking" element={<MeetingPage />} />
+    </Routes>
+  )
+}
 
 export default App
