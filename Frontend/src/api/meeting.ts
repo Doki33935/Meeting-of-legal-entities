@@ -1,10 +1,27 @@
 import { apiRequest } from './client'
-import type { BookRequestDto, BookResponseDto, MeetRequestDto, StaffDto, StartSlotDto } from '../types/api'
+import type {
+  BookRequestDto,
+  BookResponseDto,
+  MeetRequestDto,
+  StaffDto,
+  StartResponseDto,
+  StartSlotDto,
+} from '../types/api'
 
 export function getMeetingSlots() {
-  return apiRequest<StartSlotDto[]>({
+  return apiRequest<StartSlotDto[] | StartResponseDto>({
     path: '/api/start',
     method: 'GET',
+  }).then((response) => {
+    if (Array.isArray(response)) {
+      return response
+    }
+
+    if (response && Array.isArray(response.timetable)) {
+      return response.timetable
+    }
+
+    return []
   })
 }
 

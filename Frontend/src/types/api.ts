@@ -3,6 +3,12 @@ export interface StartSlotDto {
   count: number
 }
 
+export interface StartResponseDto {
+  token?: string
+  timetable: StartSlotDto[]
+  appointments?: unknown[]
+}
+
 export interface MeetRequestDto {
   slot: string
 }
@@ -17,10 +23,9 @@ export interface StaffDto {
 }
 
 export interface BookRequestDto {
-  slot: string
   staffId: number
-  specialization?: string
-  note?: string
+  appointmentTime: string
+  reason: string
 }
 
 export interface BookResponseDto {
