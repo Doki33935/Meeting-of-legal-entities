@@ -6,7 +6,7 @@ export interface StartSlotDto {
 export interface StartResponseDto {
   token?: string
   timetable: StartSlotDto[]
-  appointments?: unknown[]
+  appointments?: AppointmentDto[]
 }
 
 export interface MeetRequestDto {
@@ -29,8 +29,15 @@ export interface BookRequestDto {
 }
 
 export interface BookResponseDto {
-  success: boolean
+  success?: boolean
   message?: string
+}
+
+export interface AppointmentDto {
+  staffImage: string
+  staffName: string
+  reason: string
+  appointmentTime: string
 }
 
 export interface StartDaySlot {

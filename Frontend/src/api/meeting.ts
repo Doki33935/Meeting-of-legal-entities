@@ -1,5 +1,6 @@
 import { apiRequest } from './client'
 import type {
+  AppointmentDto,
   BookRequestDto,
   BookResponseDto,
   MeetRequestDto,
@@ -8,20 +9,36 @@ import type {
   StartSlotDto,
 } from '../types/api'
 
-export function getMeetingSlots() {
+export interface StartPayload {
+  token?: string
+  timetable: StartSlotDto[]
+  appointments: AppointmentDto[]
+}
+
+export function getMeetingData() {
   return apiRequest<StartSlotDto[] | StartResponseDto>({
     path: '/api/start',
     method: 'GET',
   }).then((response) => {
     if (Array.isArray(response)) {
-      return response
+      return {
+        timetable: response,
+        appointments: [],
+      } as StartPayload
     }
 
     if (response && Array.isArray(response.timetable)) {
-      return response.timetable
+      return {
+        token: response.token,
+        timetable: response.timetable,
+        appointments: Array.isArray(response.appointments) ? response.appointments : [],
+      } as StartPayload
     }
 
-    return []
+    return {
+      timetable: [],
+      appointments: [],
+    } as StartPayload
   })
 }
 
@@ -30,6 +47,12 @@ export function getAvailableStaff(request: MeetRequestDto) {
     path: '/api/meet',
     method: 'POST',
     body: JSON.stringify(request),
+  }).catch((error) => {
+    const message = error instanceof Error ? error.message : String(error)
+    if (message.includes('Нет свободных сотрудников') || message.includes('404')) {
+      return []
+    }
+    throw error
   })
 }
 
