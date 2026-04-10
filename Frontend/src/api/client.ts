@@ -1,21 +1,4 @@
-const rawApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
-
-function normalizeApiUrl(url: string | undefined) {
-  if (!url) return undefined
-
-  try {
-    const parsed = new URL(url)
-    if (parsed.protocol === 'http:') {
-      parsed.protocol = 'https:'
-      return parsed.toString().replace(/\/$/, '')
-    }
-    return parsed.toString().replace(/\/$/, '')
-  } catch {
-    return url
-  }
-}
-
-const API_URL = normalizeApiUrl(rawApiUrl)
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
 
 interface RequestOptions extends RequestInit {
   path: string
