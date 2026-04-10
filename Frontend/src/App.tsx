@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { bookMeeting, getAvailableStaff, getMeetingSlots } from './api/meeting'
 import { useTheme } from './hooks/useTheme'
@@ -8,44 +8,45 @@ import './App.css'
 type Locale = 'ru' | 'en'
 type BookingStep = 'calendar' | 'slot' | 'details'
 
+const MOSCOW_TZ = 'Europe/Moscow'
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
+const defaultLocale = (import.meta.env.VITE_DEFAULT_LANGUAGE === 'en' ? 'en' : 'ru') as Locale
+
 const copy = {
   ru: {
     brand: 'Встречи для юрлиц',
-    themeLight: 'Светлая',
-    themeDark: 'Тёмная',
+    themeLight: 'Светлая тема',
+    themeDark: 'Тёмная тема',
     languageRu: 'Русский',
     languageEn: 'English',
     badge: 'Назначение встречи',
     title: 'Запланируйте встречу для юридического лица',
     description:
-      'Выберите дату, время и место встречи, проверьте список документов и посмотрите, кто к вам приедет.',
+      'Выберите дату, время, цель встречи и представителя. Время отображается по Москве (UTC+3).',
     primaryAction: 'Обновить слоты',
     loading: 'Загружаем доступные слоты...',
     errorFallback: 'Не удалось загрузить данные.',
-    empty: 'Пока нет доступных слотов.',
+    empty: 'Доступных слотов пока нет.',
     availabilityTitle: 'Доступность по датам',
     slotLegendAvailable: 'Свободно',
     slotLegendUnavailable: 'Занято',
-    documentsTitle: 'Что нужно подготовить',
-    documentsDescription:
-      'Список документов позже можно будет подстраивать под тип компании и роль подписанта.',
     dayLabel: 'Дата',
-    countLabel: 'Доступно мест',
+    countLabel: 'Свободных специалистов',
     notAvailable: 'Нет мест',
     placeTitle: 'Место встречи',
-    placeEmpty: 'Место встречи будет показано после получения данных от backend.',
+    placeEmpty: 'Адрес встречи будет уточнён после бронирования.',
     stepCalendar: 'Шаг 1',
     stepSlot: 'Шаг 2',
     stepDetails: 'Шаг 3',
     stepCalendarLabel: 'Выберите дату',
     stepSlotLabel: 'Выберите время',
-    stepDetailsLabel: 'Проверьте детали',
+    stepDetailsLabel: 'Причина и представитель',
     summaryTitle: 'Сводка встречи',
-    summaryEmpty: 'Сначала выберите дату и время встречи.',
+    summaryEmpty: 'Выберите дату и время встречи.',
     selectedDate: 'Выбранная дата',
     selectedTime: 'Выбранное время',
-    selectedCount: 'Доступных представителей',
-    loadingStaff: 'Загружаем сотрудников...',
+    selectedCount: 'Свободно представителей',
+    loadingStaff: 'Загружаем представителей...',
     noStaff: 'На выбранное время никто не доступен.',
     selectDateHint: 'Сначала выберите дату с доступными слотами.',
     selectSlotHint: 'Теперь выберите удобное время.',
@@ -55,77 +56,127 @@ const copy = {
     chooseAnotherDate: 'Выбрать другую дату',
     unavailable: 'Недоступно',
     specializationTitle: 'Специализация',
-    specializationAny: 'Любая специализация',
-    selectSpecialist: 'Выберите специалиста',
-    bookCta: 'Назначить встречу',
-    bookSuccess: 'Встреча назначена. Мы подтвердим детали по контакту в заявке.',
-    bookError: 'Не удалось назначить встречу. Попробуйте позже.',
+    specializationAny: 'Все специализации',
     summarySpecialist: 'Выбранный специалист',
+    selectSpecialist: 'Выберите специалиста',
+    timezoneHint: 'Показываем время по Москве (UTC+3)',
+    reasonTitle: 'Цель встречи',
+    reasonPlaceholder: 'Кратко опишите цель встречи',
+    scrollToDetails: '+ Цель встречи и специалисты',
+    documentsTitle: 'Какие документы подготовить',
+    documentsDescription: 'Список меняется в зависимости от выбранной цели встречи.',
+    bookCta: 'Назначить встречу',
+    bookingInProgress: 'Назначаем...',
+    bookSuccess: 'Встреча успешно забронирована',
+    bookError: 'Не удалось назначить встречу. Попробуйте позже.',
+    availableScale: 'Цвет слота: зелёный — много, жёлтый — средне, красный — мало.',
   },
   en: {
-    brand: 'Legal entity meetings',
-    themeLight: 'Light',
-    themeDark: 'Dark',
+    brand: 'Legal Entity Meetings',
+    themeLight: 'Light theme',
+    themeDark: 'Dark theme',
     languageRu: 'Russian',
     languageEn: 'English',
-    badge: 'Meeting scheduling',
+    badge: 'Meeting booking',
     title: 'Schedule a meeting for a legal entity',
     description:
-      'Choose the date, time, and location, review required documents, and see who will arrive.',
+      'Pick date, time, meeting purpose and representative. Time is shown in Moscow timezone (UTC+3).',
     primaryAction: 'Reload slots',
     loading: 'Loading available slots...',
     errorFallback: 'Failed to load data.',
-    empty: 'No available slots yet.',
+    empty: 'No available slots.',
     availabilityTitle: 'Availability by date',
     slotLegendAvailable: 'Available',
     slotLegendUnavailable: 'Busy',
-    documentsTitle: 'Documents to prepare',
-    documentsDescription:
-      'This list can later be adjusted by company type and signatory role.',
     dayLabel: 'Date',
-    countLabel: 'Available seats',
+    countLabel: 'Free specialists',
     notAvailable: 'No seats',
     placeTitle: 'Meeting place',
-    placeEmpty: 'The meeting place will be shown after the backend provides it.',
+    placeEmpty: 'Address will be confirmed after booking.',
     stepCalendar: 'Step 1',
     stepSlot: 'Step 2',
     stepDetails: 'Step 3',
-    stepCalendarLabel: 'Choose a date',
-    stepSlotLabel: 'Choose a time',
-    stepDetailsLabel: 'Review details',
+    stepCalendarLabel: 'Pick a date',
+    stepSlotLabel: 'Pick a time',
+    stepDetailsLabel: 'Reason and specialist',
     summaryTitle: 'Meeting summary',
-    summaryEmpty: 'Select a meeting date and time first.',
+    summaryEmpty: 'Pick date and time first.',
     selectedDate: 'Selected date',
     selectedTime: 'Selected time',
-    selectedCount: 'Available representatives',
-    loadingStaff: 'Loading staff...',
-    noStaff: 'No staff available for the selected time.',
-    selectDateHint: 'Start by choosing a date with available slots.',
-    selectSlotHint: 'Now choose a convenient time.',
-    noSlots: 'No available slots for this date.',
+    selectedCount: 'Free specialists',
+    loadingStaff: 'Loading representatives...',
+    noStaff: 'No one is available for this time.',
+    selectDateHint: 'Start by selecting a date with free slots.',
+    selectSlotHint: 'Now select a suitable time.',
+    noSlots: 'No slots for this date.',
     whoIsComing: 'Who is coming',
     representativeAge: 'Age',
     chooseAnotherDate: 'Choose another date',
     unavailable: 'Unavailable',
     specializationTitle: 'Specialization',
-    specializationAny: 'Any specialization',
-    selectSpecialist: 'Select a specialist',
-    bookCta: 'Book meeting',
-    bookSuccess: 'Meeting booked. We will confirm the details via your contacts.',
-    bookError: 'Could not book the meeting. Please try again.',
+    specializationAny: 'All specializations',
     summarySpecialist: 'Chosen specialist',
+    selectSpecialist: 'Select a specialist',
+    timezoneHint: 'Time is shown in Moscow timezone (UTC+3)',
+    reasonTitle: 'Meeting purpose',
+    reasonPlaceholder: 'Describe purpose briefly',
+    scrollToDetails: '+ Purpose and specialists',
+    documentsTitle: 'Documents to prepare',
+    documentsDescription: 'The list adapts to selected meeting purpose.',
+    bookCta: 'Book meeting',
+    bookingInProgress: 'Booking...',
+    bookSuccess: 'Meeting booked successfully',
+    bookError: 'Could not book the meeting. Try again later.',
+    availableScale: 'Slot color: green — many, yellow — medium, red — low.',
   },
 } as const
 
-const documents = [
+const reasons = {
+  ru: [
+    'Открытие расчётного счёта',
+    'Подключение эквайринга',
+    'Изменение данных компании',
+    'Консультация по тарифу',
+  ],
+  en: [
+    'Open business account',
+    'Enable acquiring',
+    'Company data changes',
+    'Tariff consultation',
+  ],
+} as const
+
+const documentsByReason: Record<string, string[]> = {
+  'Открытие расчётного счёта': [
+    'Паспорт представителя компании',
+    'ИНН и ОГРН',
+    'Устав или учредительные документы',
+    'Доверенность, если подписант не директор',
+  ],
+  'Подключение эквайринга': [
+    'Паспорт представителя',
+    'Реквизиты расчётного счёта',
+    'Договор аренды или адрес торговой точки',
+    'Описание бизнес-модели',
+  ],
+  'Изменение данных компании': [
+    'Паспорт представителя',
+    'Документы-основания изменения',
+    'Новая карточка организации',
+    'Доверенность (если требуется)',
+  ],
+  'Консультация по тарифу': [
+    'Паспорт представителя',
+    'Текущий договор обслуживания',
+    'Список ожидаемых операций',
+  ],
+}
+
+const fallbackDocumentsRu = [
   'Паспорт представителя компании',
   'ИНН и регистрационные данные',
-  'Устав или учредительные документы',
-  'Доверенность, если подписант не учредитель',
+  'Учредительные документы',
 ]
-
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
-const defaultLocale = (import.meta.env.VITE_DEFAULT_LANGUAGE === 'en' ? 'en' : 'ru') as Locale
 
 const staffSpecializationMap: Record<string, string> = {
   'Alice Johnson': 'Корпоративное право',
@@ -140,11 +191,45 @@ const staffSpecializationMap: Record<string, string> = {
   'Julia Roberts': 'Бизнес-консалтинг',
 }
 
-function enrichStaff(data: StaffDto[]): StaffDto[] {
-  return data.map((s) => ({
-    ...s,
-    specialization: s.specialization ?? staffSpecializationMap[s.name] ?? 'Корпоративное право',
-  }))
+function avatarFallback(name: string) {
+  const initials = name
+    .split(' ')
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('')
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><rect width='100%' height='100%' fill='#e5e7eb'/><text x='50%' y='54%' text-anchor='middle' font-size='44' font-family='Arial,sans-serif' fill='#374151'>${initials}</text></svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
+
+function toMoscowYMD(input: string | Date) {
+  const date = typeof input === 'string' ? new Date(input) : input
+  return new Intl.DateTimeFormat('en-CA', { timeZone: MOSCOW_TZ }).format(date)
+}
+
+function formatDayLabel(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    timeZone: MOSCOW_TZ,
+  }).format(new Date(value))
+}
+
+function formatTime(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: MOSCOW_TZ,
+  }).format(new Date(value))
+}
+
+function monthTitle(year: number, monthIndex0: number, locale: Locale) {
+  const date = new Date(Date.UTC(year, monthIndex0, 1))
+  return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: MOSCOW_TZ,
+  }).format(date)
 }
 
 function getImageUrl(path: string) {
@@ -153,69 +238,43 @@ function getImageUrl(path: string) {
   return `${API_URL ?? ''}${path}`
 }
 
-function formatDateTime(value: string) {
-  const date = new Date(value)
-  return new Intl.DateTimeFormat('ru-RU', {
-    day: '2-digit',
-    month: 'long',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
-}
-
-function formatDayLabel(value: string) {
-  return new Intl.DateTimeFormat('ru-RU', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-  }).format(new Date(value))
-}
-
-function toYMD(date: Date) {
-  return date.toISOString().slice(0, 10)
+function enrichStaff(data: StaffDto[]) {
+  return data.map((staff) => ({
+    ...staff,
+    specialization: staff.specialization ?? staffSpecializationMap[staff.name] ?? 'Корпоративное право',
+  }))
 }
 
 function getMonthGrid(anchor: Date) {
   const year = anchor.getUTCFullYear()
   const month = anchor.getUTCMonth()
-  const firstOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0))
+  const firstOfMonth = new Date(Date.UTC(year, month, 1))
   const firstDowMon0 = (firstOfMonth.getUTCDay() + 6) % 7
   const gridStart = new Date(firstOfMonth)
   gridStart.setUTCDate(gridStart.getUTCDate() - firstDowMon0)
 
   const days: Date[] = []
   for (let i = 0; i < 42; i++) {
-    const d = new Date(gridStart)
-    d.setUTCDate(gridStart.getUTCDate() + i)
-    days.push(d)
+    const day = new Date(gridStart)
+    day.setUTCDate(gridStart.getUTCDate() + i)
+    days.push(day)
   }
 
   return { year, month, days }
 }
 
-const weekdayHeaderRu = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] as const
-
-function monthTitleRu(year: number, monthIndex0: number) {
-  const d = new Date(Date.UTC(year, monthIndex0, 1))
-  return new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }).format(d)
-}
-
-function groupSlotsByDate(slots: StartSlotDto[]): StartDaySlot[] {
+function groupSlotsByDate(slots: StartSlotDto[], locale: Locale): StartDaySlot[] {
   const grouped = new Map<string, StartDaySlot>()
 
   slots.forEach((slot) => {
-    const date = new Date(slot.slot)
-    const key = toYMD(date)
+    const key = toMoscowYMD(slot.slot)
     const current = grouped.get(key)
-    const time = new Intl.DateTimeFormat('ru-RU', {
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date)
+    const time = formatTime(slot.slot, locale)
 
     if (!current) {
       grouped.set(key, {
         date: key,
-        dayLabel: formatDayLabel(slot.slot),
+        dayLabel: formatDayLabel(slot.slot, locale),
         slots: [{ time, count: slot.count, slot: slot.slot }],
       })
       return
@@ -227,6 +286,12 @@ function groupSlotsByDate(slots: StartSlotDto[]): StartDaySlot[] {
   return Array.from(grouped.values())
 }
 
+function slotAvailabilityClass(count: number) {
+  if (count <= 1) return 'slot-card--low'
+  if (count <= 3) return 'slot-card--medium'
+  return 'slot-card--high'
+}
+
 function MeetingBookingPage() {
   const { theme, toggleTheme } = useTheme()
   const [locale, setLocale] = useState<Locale>(defaultLocale)
@@ -236,42 +301,53 @@ function MeetingBookingPage() {
   const [error, setError] = useState('')
   const [staff, setStaff] = useState<StaffDto[]>([])
   const [selectedStaff, setSelectedStaff] = useState<StaffDto | null>(null)
-  const [clientSpecialization, setClientSpecialization] = useState<string>('all')
-  const [bookingStatus, setBookingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [bookingMessage, setBookingMessage] = useState('')
   const [loadingStaff, setLoadingStaff] = useState(false)
   const [staffError, setStaffError] = useState('')
+  const [clientSpecialization, setClientSpecialization] = useState('all')
+  const [bookingReason, setBookingReason] = useState<string>(reasons[defaultLocale][0])
+  const [bookingStatus, setBookingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [bookingMessage, setBookingMessage] = useState('')
   const [visibleMonth, setVisibleMonth] = useState(() => {
-    const base = new Date()
-    return new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1))
+    const now = new Date()
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
   })
   const [selectedDateYMD, setSelectedDateYMD] = useState<string | null>(null)
 
+  const detailsRef = useRef<HTMLElement | null>(null)
   const t = copy[locale]
+  const weekdayHeader = locale === 'ru' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+
+  const slotsByDate = useMemo(() => groupSlotsByDate(slots, locale), [slots, locale])
+  const availableDatesSet = useMemo(() => new Set(slots.map((slot) => toMoscowYMD(slot.slot))), [slots])
+  const selectedDay = useMemo(
+    () => (selectedDateYMD ? slotsByDate.find((day) => day.date === selectedDateYMD) ?? null : null),
+    [selectedDateYMD, slotsByDate],
+  )
+  const selectedDaySlots = selectedDay?.slots ?? []
+  const bookingStep: BookingStep = !selectedDateYMD ? 'calendar' : !selectedSlot ? 'slot' : 'details'
+
+  const specializationOptions = useMemo(
+    () => ['all', ...new Set(staff.map((person) => person.specialization ?? 'Корпоративное право'))],
+    [staff],
+  )
+
+  const filteredStaff = useMemo(
+    () => (clientSpecialization === 'all' ? staff : staff.filter((person) => person.specialization === clientSpecialization)),
+    [clientSpecialization, staff],
+  )
+
+  const documents = useMemo(() => {
+    if (locale === 'en') return fallbackDocumentsRu
+    return documentsByReason[bookingReason] ?? fallbackDocumentsRu
+  }, [bookingReason, locale])
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])
 
-  const slotsByDate = useMemo(() => groupSlotsByDate(slots), [slots])
-  const availableDatesSet = useMemo(() => new Set(slots.map((s) => toYMD(new Date(s.slot)))), [slots])
-  const selectedDay = useMemo(() => {
-    if (!selectedDateYMD) return null
-    return slotsByDate.find((d) => d.date === selectedDateYMD) ?? null
-  }, [selectedDateYMD, slotsByDate])
-  const selectedDaySlots = selectedDay?.slots ?? []
-  const bookingStep: BookingStep = !selectedDateYMD ? 'calendar' : !selectedSlot ? 'slot' : 'details'
-  const specializationOptions = useMemo(
-    () => ['all', ...new Set(staff.map((s) => s.specialization ?? 'Корпоративное право'))],
-    [staff],
-  )
-  const filteredStaff = useMemo(
-    () =>
-      clientSpecialization === 'all'
-        ? staff
-        : staff.filter((s) => s.specialization === clientSpecialization),
-    [clientSpecialization, staff],
-  )
+  useEffect(() => {
+    setBookingReason(reasons[locale][0])
+  }, [locale])
 
   const loadStaff = async (slot: string) => {
     setLoadingStaff(true)
@@ -280,15 +356,11 @@ function MeetingBookingPage() {
     setBookingStatus('idle')
     setBookingMessage('')
     try {
-      const data = enrichStaff(await getAvailableStaff({ slot }))
-      setStaff(data)
-      const preferred =
-        clientSpecialization === 'all'
-          ? data[0] ?? null
-          : data.find((s) => s.specialization === clientSpecialization) ?? null
-      setSelectedStaff(preferred)
+      const result = enrichStaff(await getAvailableStaff({ slot }))
+      setStaff(result)
+      setSelectedStaff(result[0] ?? null)
     } catch (cause) {
-      console.error('[MeetingBookingPage] Failed to load staff', cause)
+      console.error('[MeetingBookingPage] loadStaff failed', cause)
       setStaffError(t.errorFallback)
       setStaff([])
     } finally {
@@ -314,24 +386,20 @@ function MeetingBookingPage() {
 
       if (first) {
         const firstDate = new Date(first.slot)
-        setSelectedDateYMD(toYMD(firstDate))
+        setSelectedDateYMD(toMoscowYMD(firstDate))
         setVisibleMonth(new Date(Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), 1)))
-        void loadStaff(first.slot)
+        await loadStaff(first.slot)
       } else {
         setSelectedDateYMD(null)
-        setSelectedSlot(null)
       }
     } catch (cause) {
-      console.error('[MeetingBookingPage] Failed to load slots', cause)
+      console.error('[MeetingBookingPage] loadSlots failed', cause)
       setError(t.errorFallback)
       setSlots([])
       setSelectedSlot(null)
       setSelectedDateYMD(null)
       setStaff([])
-      setStaffError('')
       setSelectedStaff(null)
-      setBookingStatus('idle')
-      setBookingMessage('')
     } finally {
       setLoading(false)
     }
@@ -342,20 +410,26 @@ function MeetingBookingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale])
 
+  const handleSlotSelect = async (slot: string, count: number) => {
+    setSelectedSlot({ slot, count })
+    await loadStaff(slot)
+    detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const handleBook = async () => {
-    if (!selectedSlot || !selectedStaff) return
+    if (!selectedSlot || !selectedStaff || !bookingReason.trim()) return
     setBookingStatus('loading')
     setBookingMessage('')
     try {
       const response = await bookMeeting({
-        slot: selectedSlot.slot,
         staffId: selectedStaff.id,
-        specialization: clientSpecialization === 'all' ? selectedStaff.specialization : clientSpecialization,
+        appointmentTime: selectedSlot.slot,
+        reason: bookingReason.trim(),
       })
       setBookingStatus('success')
       setBookingMessage(response.message ?? t.bookSuccess)
     } catch (cause) {
-      console.error('[MeetingBookingPage] Failed to book meeting', cause)
+      console.error('[MeetingBookingPage] booking failed', cause)
       setBookingStatus('error')
       setBookingMessage(t.bookError)
     }
@@ -364,9 +438,7 @@ function MeetingBookingPage() {
   return (
     <main className="page">
       <header className="topbar">
-        <div>
-          <p className="topbar__brand">{t.brand}</p>
-        </div>
+        <p className="topbar__brand">{t.brand}</p>
         <div className="topbar__controls">
           <button type="button" className="chip-button" onClick={toggleTheme}>
             {theme === 'light' ? t.themeDark : t.themeLight}
@@ -412,11 +484,9 @@ function MeetingBookingPage() {
           <div className="section-head">
             <div>
               <h2 className="card__title">{t.availabilityTitle}</h2>
-              <p className="card__subtitle">{t.selectDateHint}</p>
+              <p className="card__subtitle">{t.timezoneHint}</p>
             </div>
-            <span className="section-head__legend">
-              {t.slotLegendAvailable} / {t.slotLegendUnavailable}
-            </span>
+            <span className="section-head__legend">{t.availableScale}</span>
           </div>
 
           <div className="calendar">
@@ -424,39 +494,37 @@ function MeetingBookingPage() {
               <button
                 type="button"
                 className="calendar__nav"
-                onClick={() => {
-                  setVisibleMonth((cur) => new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth() - 1, 1)))
-                }}
+                onClick={() =>
+                  setVisibleMonth((current) => new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() - 1, 1)))
+                }
               >
                 ‹
               </button>
-              <div className="calendar__title">
-                {monthTitleRu(visibleMonth.getUTCFullYear(), visibleMonth.getUTCMonth())}
-              </div>
+              <div className="calendar__title">{monthTitle(visibleMonth.getUTCFullYear(), visibleMonth.getUTCMonth(), locale)}</div>
               <button
                 type="button"
                 className="calendar__nav"
-                onClick={() => {
-                  setVisibleMonth((cur) => new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth() + 1, 1)))
-                }}
+                onClick={() =>
+                  setVisibleMonth((current) => new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 1)))
+                }
               >
                 ›
               </button>
             </div>
 
             <div className="calendar__weekdays">
-              {weekdayHeaderRu.map((d) => (
-                <div key={d} className="calendar__weekday">
-                  {d}
+              {weekdayHeader.map((day) => (
+                <div key={day} className="calendar__weekday">
+                  {day}
                 </div>
               ))}
             </div>
 
             <div className="calendar__grid">
-              {getMonthGrid(visibleMonth).days.map((d) => {
-                const ymd = toYMD(d)
-                const dayNum = d.getUTCDate()
-                const isInMonth = d.getUTCMonth() === visibleMonth.getUTCMonth()
+              {getMonthGrid(visibleMonth).days.map((date) => {
+                const ymd = toMoscowYMD(date)
+                const dayNum = date.getUTCDate()
+                const isInMonth = date.getUTCMonth() === visibleMonth.getUTCMonth()
                 const hasSlots = availableDatesSet.has(ymd)
                 const isSelected = selectedDateYMD === ymd
 
@@ -467,19 +535,9 @@ function MeetingBookingPage() {
                     className={`calendar__day ${isInMonth ? '' : 'calendar__day--out'} ${isSelected ? 'calendar__day--selected' : ''} ${hasSlots ? 'calendar__day--has' : ''}`}
                     onClick={() => {
                       setSelectedDateYMD(ymd)
-                      const first = slotsByDate.find((day) => day.date === ymd)?.slots[0]?.slot ?? null
-                      if (first) {
-                        const source = slots.find((s) => s.slot === first) ?? null
-                        setSelectedSlot(source)
-                        void loadStaff(first)
-                      } else {
-                        setSelectedSlot(null)
-                        setStaff([])
-                        setStaffError('')
-                        setSelectedStaff(null)
-                        setBookingStatus('idle')
-                        setBookingMessage('')
-                      }
+                      const first = slotsByDate.find((day) => day.date === ymd)?.slots[0] ?? null
+                      if (!first) return
+                      void handleSlotSelect(first.slot, first.count)
                     }}
                     disabled={!hasSlots}
                     aria-label={`Day ${ymd}`}
@@ -516,10 +574,7 @@ function MeetingBookingPage() {
                       setSelectedDateYMD(null)
                       setSelectedSlot(null)
                       setStaff([])
-                      setStaffError('')
                       setSelectedStaff(null)
-                      setBookingStatus('idle')
-                      setBookingMessage('')
                     }}
                   >
                     {t.chooseAnotherDate}
@@ -528,27 +583,20 @@ function MeetingBookingPage() {
 
                 <div className="slots-grid">
                   {selectedDaySlots.length > 0 ? (
-                    selectedDaySlots.map((s) => {
-                      const isSelected = selectedSlot?.slot === s.slot
-                      const isAvailable = s.count > 0
-
+                    selectedDaySlots.map((slot) => {
+                      const isSelected = selectedSlot?.slot === slot.slot
+                      const isAvailable = slot.count > 0
                       return (
                         <button
-                          key={s.slot}
+                          key={slot.slot}
                           type="button"
-                          className={`slot-card ${isSelected ? 'slot-card--selected' : ''}`}
-                          onClick={() => {
-                        const source = slots.find((item) => item.slot === s.slot) ?? { slot: s.slot, count: s.count }
-                        setSelectedSlot(source)
-                        setSelectedStaff(null)
-                        setBookingStatus('idle')
-                        setBookingMessage('')
-                        void loadStaff(s.slot)
-                      }}
+                          className={`slot-card ${slotAvailabilityClass(slot.count)} ${isSelected ? 'slot-card--selected' : ''}`}
+                          onClick={() => void handleSlotSelect(slot.slot, slot.count)}
+                          disabled={!isAvailable}
                         >
-                          <span className="slot-card__time">{s.time}</span>
+                          <span className="slot-card__time">{slot.time}</span>
                           <span className={`slot-card__status ${isAvailable ? 'slot-card__status--available' : 'slot-card__status--busy'}`}>
-                            {isAvailable ? `${t.slotLegendAvailable} (${s.count})` : t.notAvailable}
+                            {isAvailable ? `${t.slotLegendAvailable} (${slot.count})` : t.notAvailable}
                           </span>
                           <span className="slot-card__meta">{isAvailable ? t.countLabel : t.unavailable}</span>
                         </button>
@@ -560,6 +608,16 @@ function MeetingBookingPage() {
                     </div>
                   )}
                 </div>
+
+                {selectedSlot && (
+                  <button
+                    type="button"
+                    className="text-button scroll-cta"
+                    onClick={() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  >
+                    {t.scrollToDetails}
+                  </button>
+                )}
               </div>
             ) : (
               <div className="state-card state-card--muted">
@@ -569,18 +627,18 @@ function MeetingBookingPage() {
           </div>
         </article>
 
-        <article className="card booking-card booking-card--details">
+        <article className="card booking-card booking-card--details" ref={detailsRef}>
           <div className="summary-panel">
             <h2 className="card__title">{t.summaryTitle}</h2>
             {selectedSlot ? (
               <div className="summary-panel__content">
                 <div className="summary-row">
                   <span className="summary-row__label">{t.selectedDate}</span>
-                  <strong>{formatDayLabel(selectedSlot.slot)}</strong>
+                  <strong>{formatDayLabel(selectedSlot.slot, locale)}</strong>
                 </div>
                 <div className="summary-row">
                   <span className="summary-row__label">{t.selectedTime}</span>
-                  <strong>{formatDateTime(selectedSlot.slot).split(', ')[1] ?? formatDateTime(selectedSlot.slot)}</strong>
+                  <strong>{formatTime(selectedSlot.slot, locale)}</strong>
                 </div>
                 <div className="summary-row">
                   <span className="summary-row__label">{t.selectedCount}</span>
@@ -599,12 +657,26 @@ function MeetingBookingPage() {
           </div>
 
           <div className="info-block">
-            <div className="section-head section-head--stacked">
-              <div>
-                <h3 className="card__title card__title--small">{t.whoIsComing}</h3>
-                <p className="card__subtitle">{t.selectSlotHint}</p>
-              </div>
-            </div>
+            <h3 className="card__title card__title--small">{t.reasonTitle}</h3>
+            <select className="reason-select" value={bookingReason} onChange={(event) => setBookingReason(event.target.value)}>
+              {reasons[locale].map((reason) => (
+                <option key={reason} value={reason}>
+                  {reason}
+                </option>
+              ))}
+            </select>
+            <textarea
+              className="reason-textarea"
+              value={bookingReason}
+              onChange={(event) => setBookingReason(event.target.value)}
+              placeholder={t.reasonPlaceholder}
+              rows={3}
+            />
+          </div>
+
+          <div className="info-block">
+            <h3 className="card__title card__title--small">{t.whoIsComing}</h3>
+            <p className="card__subtitle">{t.selectSpecialist}</p>
 
             {loadingStaff ? (
               <div className="state-card state-card--loading">
@@ -627,68 +699,60 @@ function MeetingBookingPage() {
                     className={`chip-button chip-button--ghost ${clientSpecialization === 'all' ? 'chip-button--selected' : ''}`}
                     onClick={() => {
                       setClientSpecialization('all')
-                      setSelectedStaff(null)
+                      setSelectedStaff(filteredStaff[0] ?? null)
                     }}
                   >
                     {t.specializationAny}
                   </button>
                   {specializationOptions
-                    .filter((spec) => spec !== 'all')
-                    .map((spec) => (
+                    .filter((specialization) => specialization !== 'all')
+                    .map((specialization) => (
                       <button
-                        key={spec}
+                        key={specialization}
                         type="button"
-                        className={`chip-button chip-button--ghost ${clientSpecialization === spec ? 'chip-button--selected' : ''}`}
+                        className={`chip-button chip-button--ghost ${clientSpecialization === specialization ? 'chip-button--selected' : ''}`}
                         onClick={() => {
-                          setClientSpecialization(spec)
-                          const candidate = staff.find((s) => s.specialization === spec) ?? null
-                          setSelectedStaff(candidate)
+                          setClientSpecialization(specialization)
+                          setSelectedStaff(staff.find((person) => person.specialization === specialization) ?? null)
                         }}
                       >
-                        {spec}
+                        {specialization}
                       </button>
                     ))}
                 </div>
 
                 <ul className="staff-grid">
-                  {filteredStaff.map((s) => {
-                    const isSelected = selectedStaff?.id === s.id
+                  {filteredStaff.map((person) => {
+                    const selected = selectedStaff?.id === person.id
                     return (
                       <li
-                        key={s.id}
-                        className={`staff-card staff-card--selectable ${isSelected ? 'is-selected' : ''}`}
-                        onClick={() => {
-                          setSelectedStaff(s)
-                          setBookingStatus('idle')
-                          setBookingMessage('')
-                        }}
+                        key={person.id}
+                        className={`staff-card staff-card--selectable ${selected ? 'is-selected' : ''}`}
+                        onClick={() => setSelectedStaff(person)}
                       >
-                        <img className="staff-card__image" src={getImageUrl(s.image)} alt={s.name} loading="lazy" />
+                        <img
+                          className="staff-card__image"
+                          src={getImageUrl(person.image)}
+                          alt={person.name}
+                          loading="lazy"
+                          onError={(event) => {
+                            event.currentTarget.src = avatarFallback(person.name)
+                          }}
+                        />
                         <div className="staff-card__body">
-                          <strong className="staff-card__name">{s.name}</strong>
+                          <strong className="staff-card__name">{person.name}</strong>
                           <p className="staff-card__meta">
-                            {t.representativeAge}: {s.age}
+                            {t.representativeAge}: {person.age}
                           </p>
-                          <p className="staff-card__meta">{s.specialization}</p>
-                          <p className="staff-card__description">{s.description}</p>
+                          <p className="staff-card__meta">{person.specialization}</p>
+                          <p className="staff-card__description">{person.description}</p>
                         </div>
                       </li>
                     )
                   })}
-
-                  {filteredStaff.length === 0 && (
-                    <li className="state-card state-card--muted">
-                      <p className="state-text">{t.noStaff}</p>
-                    </li>
-                  )}
                 </ul>
               </>
             )}
-          </div>
-
-          <div className="info-block">
-            <h3 className="card__title card__title--small">{t.placeTitle}</h3>
-            <p className="state-text state-text--muted">{t.placeEmpty}</p>
           </div>
 
           <div className="info-block">
@@ -702,6 +766,11 @@ function MeetingBookingPage() {
               ))}
             </ul>
           </div>
+
+          <div className="info-block">
+            <h3 className="card__title card__title--small">{t.placeTitle}</h3>
+            <p className="state-text state-text--muted">{t.placeEmpty}</p>
+          </div>
         </article>
       </section>
 
@@ -710,24 +779,23 @@ function MeetingBookingPage() {
           <div className="booking-toast__info">
             <p className="booking-toast__title">{t.bookCta}</p>
             <p className="booking-toast__line">
-              {formatDayLabel(selectedSlot.slot)} • {formatDateTime(selectedSlot.slot).split(', ')[1] ?? ''}
+              {formatDayLabel(selectedSlot.slot, locale)} • {formatTime(selectedSlot.slot, locale)}
             </p>
             <p className="booking-toast__line">
               {selectedStaff.name} · {selectedStaff.specialization}
             </p>
+            <p className="booking-toast__line">{bookingReason}</p>
             {bookingMessage && (
-              <p className={`booking-toast__message ${bookingStatus === 'error' ? 'is-error' : 'is-success'}`}>
-                {bookingMessage}
-              </p>
+              <p className={`booking-toast__message ${bookingStatus === 'error' ? 'is-error' : 'is-success'}`}>{bookingMessage}</p>
             )}
           </div>
           <button
             type="button"
             className="button button--primary booking-toast__action"
             onClick={() => void handleBook()}
-            disabled={bookingStatus === 'loading'}
+            disabled={bookingStatus === 'loading' || !bookingReason.trim()}
           >
-            {bookingStatus === 'loading' ? 'Назначаем…' : t.bookCta}
+            {bookingStatus === 'loading' ? t.bookingInProgress : t.bookCta}
           </button>
         </div>
       )}

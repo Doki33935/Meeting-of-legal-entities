@@ -345,6 +345,18 @@
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+.slot-card--high {
+  border-color: rgba(22, 163, 74, 0.35);
+}
+
+.slot-card--medium {
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.slot-card--low {
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
 .slot-card__time {
   font-size: 18px;
   font-weight: 700;
@@ -423,6 +435,21 @@
 
 .summary-row__label {
   color: var(--text-secondary);
+}
+
+.reason-select,
+.reason-textarea {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  padding: 10px 12px;
+}
+
+.reason-textarea {
+  resize: vertical;
+  min-height: 88px;
 }
 
 .info-block {
@@ -574,6 +601,11 @@
   margin: 0;
   color: var(--text-secondary);
   line-height: 1.6;
+}
+
+.scroll-cta {
+  align-self: flex-start;
+  margin-top: 6px;
 }
 
 @media (max-width: 980px) {
