@@ -6,8 +6,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  color: #333333;
-  background: #f5f5f8;
+  color: var(--text-primary);
+  background: transparent;
 }
 
 .topbar {
@@ -27,11 +27,20 @@
   gap: 8px;
 }
 
+.cookie-warning {
+  margin: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  background: var(--surface);
+}
+
 .chip-button,
 .text-button {
-  border: 1px solid #dcdce3;
-  background: #ffffff;
-  color: #333333;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
   border-radius: 999px;
   padding: 8px 12px;
   cursor: pointer;
@@ -60,8 +69,8 @@
 }
 
 .hero-section {
-  background: #ffffff;
-  border: 1px solid #e0e0e7;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 18px;
   display: flex;
@@ -77,7 +86,7 @@
 
 .hero-section__description {
   margin: 6px 0 0;
-  color: #666666;
+  color: var(--text-secondary);
 }
 
 .grid-section {
@@ -87,8 +96,8 @@
 }
 
 .card {
-  background: #ffffff;
-  border: 1px solid #e0e0e7;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
   border-radius: 18px;
   padding: 16px;
 }
@@ -104,7 +113,7 @@
 
 .card__subtitle {
   margin: 6px 0 0;
-  color: #666666;
+  color: var(--text-secondary);
 }
 
 .calendar__header {
@@ -118,9 +127,9 @@
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  border: 1px solid #dcdce3;
-  background: #ffffff;
-  color: #333333;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -138,16 +147,16 @@
 
 .calendar__weekday {
   text-align: center;
-  color: #666666;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
 .calendar__day {
   height: 42px;
   border-radius: 10px;
-  border: 1px solid #dcdce3;
-  background: #ffffff;
-  color: #333333;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -179,8 +188,8 @@
 }
 
 .slot-card {
-  border: 1px solid #dcdce3;
-  background: #ffffff;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
   border-radius: 14px;
   padding: 12px;
   text-align: left;
@@ -235,7 +244,7 @@
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  border: 1px solid #e0e0e7;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 10px 12px;
 }
@@ -249,10 +258,10 @@
 
 .reason-select {
   width: 100%;
-  border: 1px solid #dcdce3;
+  border: 1px solid var(--border-color);
   border-radius: 10px;
-  background: #ffffff;
-  color: #333333;
+  background: var(--surface);
+  color: var(--text-primary);
   padding: 9px 10px;
 }
 
@@ -270,10 +279,10 @@
 }
 
 .chips__item {
-  border: 1px solid #dcdce3;
+  border: 1px solid var(--border-color);
   border-radius: 999px;
   padding: 8px 12px;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .staff-grid {
@@ -289,9 +298,9 @@
   grid-template-columns: 86px 1fr;
   gap: 10px;
   padding: 10px;
-  border: 1px solid #e0e0e7;
+  border: 1px solid var(--border-color);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .staff-card--selectable {
@@ -320,7 +329,7 @@
 .staff-card__meta,
 .staff-card__description {
   margin: 0;
-  color: #666666;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -331,10 +340,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border: 1px solid #dcdce3;
+  border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 12px;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .booking-toast__title {
@@ -344,7 +353,7 @@
 
 .booking-toast__line {
   margin: 0;
-  color: #666666;
+  color: var(--text-secondary);
 }
 
 .booking-toast__message.is-success {
@@ -364,10 +373,10 @@
 }
 
 .appointment-card {
-  border: 1px solid #dcdce3;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 12px;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .appointment-line {
@@ -378,7 +387,7 @@
 }
 
 .state-text {
-  color: #666666;
+  color: var(--text-secondary);
 }
 
 .state-text--error {

@@ -27,11 +27,29 @@ export function getMeetingData() {
       } as StartPayload
     }
 
-    if (response && Array.isArray(response.timetable)) {
+    const payload = response as StartResponseDto & {
+      Token?: string
+      Timetable?: StartSlotDto[]
+      Appointments?: AppointmentDto[]
+    }
+
+    const timetable = Array.isArray(payload.timetable)
+      ? payload.timetable
+      : Array.isArray(payload.Timetable)
+      ? payload.Timetable
+      : []
+
+    const appointments = Array.isArray(payload.appointments)
+      ? payload.appointments
+      : Array.isArray(payload.Appointments)
+      ? payload.Appointments
+      : []
+
+    if (timetable.length > 0 || appointments.length > 0 || payload.token || payload.Token) {
       return {
-        token: response.token,
-        timetable: response.timetable,
-        appointments: Array.isArray(response.appointments) ? response.appointments : [],
+        token: payload.token ?? payload.Token,
+        timetable,
+        appointments,
       } as StartPayload
     }
 
