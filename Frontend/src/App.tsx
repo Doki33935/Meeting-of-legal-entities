@@ -10,22 +10,23 @@ type Locale = 'ru' | 'en'
 const MOSCOW_TZ = 'Europe/Moscow'
 const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
 const defaultLocale = (import.meta.env.VITE_DEFAULT_LANGUAGE === 'en' ? 'en' : 'ru') as Locale
+const LOCAL_APPOINTMENTS_KEY = 'meeting-local-appointments-v1'
+const LOCAL_TOKEN_KEY = 'meeting-last-token-v1'
 
 const text = {
   ru: {
     brand: 'Встречи для юрлиц',
     title: 'Назначение встречи',
-    subtitle: 'Выберите дату, время, цель и специалиста. Отображаем время по Москве (UTC+3).',
+    subtitle: 'Выберите дату, время, причину и специалиста. Время показывается по Москве (UTC+3).',
     refresh: 'Обновить слоты',
     loading: 'Загружаем доступные даты...',
     loadError: 'Не удалось загрузить данные.',
     chooseDate: 'Выберите дату',
     chooseTime: 'Выберите время',
-    noSlots: 'Нет доступных слотов',
     noSlotsForDate: 'На эту дату свободных слотов нет.',
-    reason: 'Цель встречи',
+    reason: 'Причина встречи',
     docs: 'Документы',
-    docsHint: 'Документы обновляются автоматически по выбранной цели встречи.',
+    docsHint: 'Список документов обновляется автоматически по выбранной причине.',
     specialists: 'Специалисты',
     noStaff: 'На это время нет свободных специалистов.',
     loadingStaff: 'Загружаем специалистов...',
@@ -49,23 +50,26 @@ const text = {
     why: 'Причина',
     whatTake: 'Что взять',
     toDetails: 'Перейти к выбору специалиста',
+    themeLight: 'Светлая',
+    themeDark: 'Тёмная',
+    cookieIssue:
+      'Backend выставляет Secure-cookie. На HTTP она не сохраняется в браузере, поэтому история встреч может не совпадать между перезагрузками.',
   },
   en: {
-    brand: 'Business Meetings',
-    title: 'Meeting booking',
-    subtitle: 'Pick date, time, purpose and specialist. We show Moscow timezone (UTC+3).',
+    brand: 'Business meetings',
+    title: 'Book a meeting',
+    subtitle: 'Pick date, time, reason and specialist. Time is shown in Moscow timezone (UTC+3).',
     refresh: 'Refresh slots',
     loading: 'Loading available dates...',
     loadError: 'Failed to load data.',
     chooseDate: 'Choose date',
     chooseTime: 'Choose time',
-    noSlots: 'No slots available',
     noSlotsForDate: 'No free slots for this date.',
-    reason: 'Meeting purpose',
+    reason: 'Meeting reason',
     docs: 'Documents',
-    docsHint: 'Documents update automatically by selected meeting purpose.',
+    docsHint: 'Documents list updates automatically for selected reason.',
     specialists: 'Specialists',
-    noStaff: 'No specialists available for selected time.',
+    noStaff: 'No specialists available for this time.',
     loadingStaff: 'Loading specialists...',
     age: 'Age',
     allSpecs: 'All specializations',
@@ -75,10 +79,10 @@ const text = {
     free: 'Free specialists',
     selectedSpecialist: 'Selected specialist',
     place: 'Meeting place',
-    placeValue: 'Address is confirmed after meeting approval',
+    placeValue: 'Address is confirmed after booking',
     book: 'Book meeting',
     booking: 'Booking...',
-    bookError: 'Failed to book',
+    bookError: 'Failed to book meeting',
     booked: 'Meeting booked',
     appointments: 'Your booked meetings',
     appointmentsEmpty: 'No booked meetings yet.',
@@ -87,6 +91,10 @@ const text = {
     why: 'Reason',
     whatTake: 'What to take',
     toDetails: 'Go to specialist section',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    cookieIssue:
+      'Backend sets Secure cookie. On HTTP it is not persisted by browser, so meeting history can differ after page reload.',
   },
 } as const
 
@@ -227,15 +235,38 @@ function countClass(count: number) {
   return 'count-badge count-badge--many'
 }
 
-function localizeStaff(list: StaffDto[], locale: Locale): StaffDto[] {
-  return list.map((staff) => {
-    const nameEn = staff.name
-    return {
-      ...staff,
-      name: locale === 'ru' ? (staffRuNames[nameEn] ?? nameEn) : nameEn,
-      specialization: staffSpec[nameEn] ? staffSpec[nameEn][locale] : staff.specialization,
-    }
+function localizeStaff(staff: StaffDto, locale: Locale): StaffDto {
+  const nameEn = staff.name
+  return {
+    ...staff,
+    name: locale === 'ru' ? (staffRuNames[nameEn] ?? nameEn) : nameEn,
+    specialization: staffSpec[nameEn] ? staffSpec[nameEn][locale] : staff.specialization,
+  }
+}
+
+function readLocalAppointments() {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_APPOINTMENTS_KEY)
+    if (!raw) return [] as AppointmentDto[]
+    const parsed = JSON.parse(raw) as AppointmentDto[]
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return [] as AppointmentDto[]
+  }
+}
+
+function writeLocalAppointments(appointments: AppointmentDto[]) {
+  window.localStorage.setItem(LOCAL_APPOINTMENTS_KEY, JSON.stringify(appointments))
+}
+
+function mergeAppointments(serverAppointments: AppointmentDto[], localAppointments: AppointmentDto[]) {
+  const map = new Map<string, AppointmentDto>()
+  ;[...serverAppointments, ...localAppointments].forEach((appointment) => {
+    if (!appointment?.appointmentTime || !isFutureSlot(appointment.appointmentTime)) return
+    const key = `${appointment.appointmentTime}|${appointment.staffName}|${appointment.reason}`
+    map.set(key, appointment)
   })
+  return Array.from(map.values()).sort((a, b) => parseSlot(a.appointmentTime).getTime() - parseSlot(b.appointmentTime).getTime())
 }
 
 function MeetingPage() {
@@ -247,10 +278,11 @@ function MeetingPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<StartSlotDto | null>(null)
   const [staff, setStaff] = useState<StaffDto[]>([])
-  const [selectedStaff, setSelectedStaff] = useState<StaffDto | null>(null)
+  const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null)
   const [specFilter, setSpecFilter] = useState('all')
   const [reason, setReason] = useState<string>(reasonOptions[defaultLocale][0])
   const [slotActualCount, setSlotActualCount] = useState<Record<string, number>>({})
+  const [cookieWarning, setCookieWarning] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadingStaff, setLoadingStaff] = useState(false)
   const [error, setError] = useState('')
@@ -274,13 +306,20 @@ function MeetingPage() {
   const day = useMemo(() => grouped.find((d) => d.date === selectedDate) ?? null, [grouped, selectedDate])
   const availableDateSet = useMemo(() => new Set(grouped.map((d) => d.date)), [grouped])
   const docs = docsByReason[reason] ?? docsByReason[reasonOptions[locale][0]]
-  const localizedStaff = useMemo(() => localizeStaff(staff, locale), [staff, locale])
+
+  const localizedStaff = useMemo(() => staff.map((member) => localizeStaff(member, locale)), [staff, locale])
+  const selectedStaff = useMemo(
+    () => localizedStaff.find((member) => member.id === selectedStaffId) ?? null,
+    [localizedStaff, selectedStaffId],
+  )
+
   const specOptions = useMemo(
-    () => ['all', ...new Set(localizedStaff.map((s) => s.specialization ?? '').filter(Boolean))],
+    () => ['all', ...new Set(localizedStaff.map((member) => member.specialization ?? '').filter(Boolean))],
     [localizedStaff],
   )
+
   const filteredStaff = useMemo(
-    () => (specFilter === 'all' ? localizedStaff : localizedStaff.filter((s) => s.specialization === specFilter)),
+    () => (specFilter === 'all' ? localizedStaff : localizedStaff.filter((member) => member.specialization === specFilter)),
     [localizedStaff, specFilter],
   )
 
@@ -290,7 +329,16 @@ function MeetingPage() {
     try {
       const data = await getMeetingData()
       setSlots(data.timetable)
-      setAppointments(data.appointments)
+      const localAppointments = readLocalAppointments()
+      setAppointments(mergeAppointments(data.appointments, localAppointments))
+
+      const savedToken = window.localStorage.getItem(LOCAL_TOKEN_KEY)
+      if (savedToken && data.token && savedToken !== data.token && (API_URL ?? '').startsWith('http://')) {
+        setCookieWarning(true)
+      }
+      if (data.token) {
+        window.localStorage.setItem(LOCAL_TOKEN_KEY, data.token)
+      }
     } catch {
       setError(t.loadError)
     } finally {
@@ -301,15 +349,21 @@ function MeetingPage() {
   const loadStaffForSlot = async (slot: string) => {
     setLoadingStaff(true)
     setStaffError('')
-    setSelectedStaff(null)
+    setSelectedStaffId(null)
     setBookingStatus('idle')
     setBookingMessage('')
     try {
       const data = await getAvailableStaff({ slot })
       setStaff(data)
       setSlotActualCount((prev) => ({ ...prev, [slot]: data.length }))
-      setSelectedStaff(data[0] ?? null)
+      setSelectedSlot((current) => (current && current.slot === slot ? { ...current, count: data.length } : current))
+      if (data.length > 0) {
+        setSelectedStaffId(data[0].id)
+      }
     } catch {
+      setStaff([])
+      setSlotActualCount((prev) => ({ ...prev, [slot]: 0 }))
+      setSelectedSlot((current) => (current && current.slot === slot ? { ...current, count: 0 } : current))
       setStaffError(t.loadError)
     } finally {
       setLoadingStaff(false)
@@ -345,17 +399,19 @@ function MeetingPage() {
         appointmentTime: selectedSlot.slot,
         reason,
       })
+
+      const appointment: AppointmentDto = {
+        staffImage: selectedStaff.image,
+        staffName: selectedStaff.name,
+        reason,
+        appointmentTime: selectedSlot.slot,
+      }
+
+      const localAppointments = mergeAppointments([], [...readLocalAppointments(), appointment])
+      writeLocalAppointments(localAppointments)
+      setAppointments((prev) => mergeAppointments(prev, [appointment]))
       setBookingStatus('success')
       setBookingMessage(response.message ?? t.booked)
-      setAppointments((prev) => [
-        ...prev,
-        {
-          staffImage: selectedStaff.image,
-          staffName: selectedStaff.name,
-          reason,
-          appointmentTime: selectedSlot.slot,
-        },
-      ])
       appointmentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       await loadAll()
     } catch {
@@ -372,13 +428,15 @@ function MeetingPage() {
         <p className="topbar__brand">{t.brand}</p>
         <div className="topbar__controls">
           <button type="button" className="chip-button" onClick={toggleTheme}>
-            {theme === 'light' ? 'Dark' : 'Light'}
+            {theme === 'light' ? t.themeDark : t.themeLight}
           </button>
           <button type="button" className="chip-button" onClick={() => setLocale((cur) => (cur === 'ru' ? 'en' : 'ru'))}>
             {locale === 'ru' ? 'EN' : 'RU'}
           </button>
         </div>
       </header>
+
+      {cookieWarning && <p className="cookie-warning">{t.cookieIssue}</p>}
 
       <section className="hero-section">
         <div>
@@ -403,20 +461,20 @@ function MeetingPage() {
           </div>
 
           <div className="calendar__weekdays">
-            {weekDays.map((d) => (
-              <div key={d} className="calendar__weekday">
-                {d}
+            {weekDays.map((dayName) => (
+              <div key={dayName} className="calendar__weekday">
+                {dayName}
               </div>
             ))}
           </div>
 
           <div className="calendar__grid">
-            {calendarDays(month).map((d) => {
-              const ymd = toMoscowYmd(d)
+            {calendarDays(month).map((dayDate) => {
+              const ymd = toMoscowYmd(dayDate)
               const isPast = ymd < toMoscowYmd(new Date())
-              const isInMonth = d.getUTCMonth() === month.getUTCMonth()
+              const isInMonth = dayDate.getUTCMonth() === month.getUTCMonth()
               const isSelected = selectedDate === ymd
-              const has = availableDateSet.has(ymd)
+              const hasSlots = availableDateSet.has(ymd)
               return (
                 <button
                   key={ymd}
@@ -427,10 +485,11 @@ function MeetingPage() {
                     setSelectedDate(ymd)
                     setSelectedSlot(null)
                     setStaff([])
-                    if (!has) setStaffError('')
+                    setSelectedStaffId(null)
+                    if (!hasSlots) setStaffError('')
                   }}
                 >
-                  {d.getUTCDate()}
+                  {dayDate.getUTCDate()}
                 </button>
               )
             })}
@@ -448,17 +507,17 @@ function MeetingPage() {
                 <>
                   <p className="card__subtitle">{t.chooseTime}</p>
                   <div className="slots-grid">
-                    {day.slots.map((s) => {
-                      const effective = slotActualCount[s.slot] ?? s.count
+                    {day.slots.map((slotItem) => {
+                      const effective = slotActualCount[slotItem.slot] ?? slotItem.count
                       return (
                         <button
-                          key={s.slot}
+                          key={slotItem.slot}
                           type="button"
-                          className={`slot-card ${selectedSlot?.slot === s.slot ? 'slot-card--selected' : ''}`}
+                          className={`slot-card ${selectedSlot?.slot === slotItem.slot ? 'slot-card--selected' : ''}`}
                           disabled={effective <= 0}
-                          onClick={() => void selectSlot(s.slot, effective)}
+                          onClick={() => void selectSlot(slotItem.slot, effective)}
                         >
-                          <span className="slot-card__time">{s.time}</span>
+                          <span className="slot-card__time">{slotItem.time}</span>
                           <span className={countClass(effective)}>
                             {effective} {t.free}
                           </span>
@@ -507,9 +566,9 @@ function MeetingPage() {
           <div className="info-block">
             <h3 className="card__title card__title--small">{t.reason}</h3>
             <select className="reason-select" value={reason} onChange={(e) => setReason(e.target.value)}>
-              {reasonOptions[locale].map((r) => (
-                <option key={r} value={r}>
-                  {r}
+              {reasonOptions[locale].map((option) => (
+                <option key={option} value={option}>
+                  {option}
                 </option>
               ))}
             </select>
@@ -519,9 +578,9 @@ function MeetingPage() {
             <h3 className="card__title card__title--small">{t.docs}</h3>
             <p className="documents-section__text">{t.docsHint}</p>
             <ul className="chips chips--stacked">
-              {docs.map((d) => (
-                <li key={d} className="chips__item">
-                  {d}
+              {docs.map((doc) => (
+                <li key={doc} className="chips__item">
+                  {doc}
                 </li>
               ))}
             </ul>
@@ -542,37 +601,46 @@ function MeetingPage() {
                     {t.allSpecs}
                   </button>
                   {specOptions
-                    .filter((x) => x !== 'all')
-                    .map((x) => (
-                      <button key={x} type="button" className={`chip-button chip-button--ghost ${specFilter === x ? 'chip-button--selected' : ''}`} onClick={() => setSpecFilter(x)}>
-                        {x}
+                    .filter((option) => option !== 'all')
+                    .map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`chip-button chip-button--ghost ${specFilter === option ? 'chip-button--selected' : ''}`}
+                        onClick={() => setSpecFilter(option)}
+                      >
+                        {option}
                       </button>
                     ))}
                 </div>
                 <ul className="staff-grid">
-                  {filteredStaff.map((s) => (
-                    <li key={`${s.id}-${s.name}`} className={`staff-card staff-card--selectable ${selectedStaff?.id === s.id ? 'is-selected' : ''}`} onClick={() => setSelectedStaff(s)}>
+                  {filteredStaff.map((member) => (
+                    <li
+                      key={`${member.id}-${member.name}`}
+                      className={`staff-card staff-card--selectable ${selectedStaffId === member.id ? 'is-selected' : ''}`}
+                      onClick={() => setSelectedStaffId(member.id)}
+                    >
                       <img
                         className="staff-card__image"
-                        src={getImageUrl(s.image)}
-                        alt={s.name}
-                        onError={(e) => {
-                          const fallback = fixBrokenStaffImage(s.image)
-                          if (fallback && e.currentTarget.dataset.retry !== '1') {
-                            e.currentTarget.dataset.retry = '1'
-                            e.currentTarget.src = fallback
+                        src={getImageUrl(member.image)}
+                        alt={member.name}
+                        onError={(event) => {
+                          const fallback = fixBrokenStaffImage(member.image)
+                          if (fallback && event.currentTarget.dataset.retry !== '1') {
+                            event.currentTarget.dataset.retry = '1'
+                            event.currentTarget.src = fallback
                             return
                           }
-                          e.currentTarget.src = avatarFallback(s.name)
+                          event.currentTarget.src = avatarFallback(member.name)
                         }}
                       />
                       <div className="staff-card__body">
-                        <strong className="staff-card__name">{s.name}</strong>
+                        <strong className="staff-card__name">{member.name}</strong>
                         <p className="staff-card__meta">
-                          {t.age}: {s.age}
+                          {t.age}: {member.age}
                         </p>
-                        <p className="staff-card__meta">{s.specialization}</p>
-                        <p className="staff-card__description">{s.description}</p>
+                        <p className="staff-card__meta">{member.specialization}</p>
+                        <p className="staff-card__description">{member.description}</p>
                       </div>
                     </li>
                   ))}
@@ -608,38 +676,40 @@ function MeetingPage() {
 
       <section className="card appointments" ref={appointmentsRef}>
         <h2 className="card__title">{t.appointments}</h2>
-        {appointments.filter((a) => isFutureSlot(a.appointmentTime)).length === 0 ? (
+        {appointments.length === 0 ? (
           <p className="state-text">{t.appointmentsEmpty}</p>
         ) : (
           <ul className="appointments-list">
-            {appointments
-              .filter((a) => isFutureSlot(a.appointmentTime))
-              .sort((a, b) => parseSlot(a.appointmentTime).getTime() - parseSlot(b.appointmentTime).getTime())
-              .map((a, idx) => {
-                const appDocs = docsByReason[a.reason] ?? docsByReason[reasonOptions[locale][0]]
-                return (
-                  <li key={`${a.appointmentTime}-${idx}`} className="appointment-card">
-                    <div className="appointment-line">
-                      <span>{t.when}:</span>
-                      <strong>
-                        {formatDay(a.appointmentTime, locale)} • {formatTime(a.appointmentTime, locale)}
-                      </strong>
-                    </div>
-                    <div className="appointment-line">
-                      <span>{t.where}:</span>
-                      <strong>{t.placeValue}</strong>
-                    </div>
-                    <div className="appointment-line">
-                      <span>{t.why}:</span>
-                      <strong>{a.reason}</strong>
-                    </div>
-                    <div className="appointment-line">
-                      <span>{t.whatTake}:</span>
-                      <strong>{appDocs.join(', ')}</strong>
-                    </div>
-                  </li>
-                )
-              })}
+            {appointments.map((appointment, idx) => {
+              const appointmentDocs = docsByReason[appointment.reason] ?? docsByReason[reasonOptions[locale][0]]
+              const translatedName = locale === 'ru' ? (staffRuNames[appointment.staffName] ?? appointment.staffName) : appointment.staffName
+              return (
+                <li key={`${appointment.appointmentTime}-${idx}`} className="appointment-card">
+                  <div className="appointment-line">
+                    <span>{t.when}:</span>
+                    <strong>
+                      {formatDay(appointment.appointmentTime, locale)} • {formatTime(appointment.appointmentTime, locale)}
+                    </strong>
+                  </div>
+                  <div className="appointment-line">
+                    <span>{t.where}:</span>
+                    <strong>{t.placeValue}</strong>
+                  </div>
+                  <div className="appointment-line">
+                    <span>{t.why}:</span>
+                    <strong>{appointment.reason}</strong>
+                  </div>
+                  <div className="appointment-line">
+                    <span>{t.selectedSpecialist}:</span>
+                    <strong>{translatedName}</strong>
+                  </div>
+                  <div className="appointment-line">
+                    <span>{t.whatTake}:</span>
+                    <strong>{appointmentDocs.join(', ')}</strong>
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>
