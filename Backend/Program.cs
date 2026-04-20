@@ -10,7 +10,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactDev", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // React dev сервер
+        policy.WithOrigins("http://192.168.73.224:8000") // React dev сервер
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -48,8 +48,9 @@ var app = builder.Build();
 
 
 // 7 Включаем CORS, Роуты, Проверка прав пользователя на этот роут и Контроллеры и Картинки
-app.UseCors("AllowReactDev");
+
 app.UseRouting();
+app.UseCors("AllowReactDev");
 app.UseAuthorization();
 app.MapControllers();
 app.UseStaticFiles();
